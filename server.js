@@ -3,63 +3,54 @@ const { Resend } = require('resend');
 const cors = require('cors');
 
 const app = express();
-app.use(express.json());
-app.use(cors());
 
-// Inicializa a API do Resend lendo da variável de ambiente no Render (ou insira sua chave entre aspas se preferir)
+// Permite requisições de qualquer origem (inclusive Netlify)
+app.use(cors());
+app.use(express.json());
+
+// Inicialização do Resend
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Armazenamento em memória dos agendamentos
-// Nota: Para salvar de forma permanente quando o servidor reiniciar no Render, o recomendado é usar um banco de dados (ex: Supabase / PostgreSQL).
-let agendamentos = [];
+// Banco de dados em memória para barbeiros e agendamentos
+let usuariosBarbeiros = [
+  {
+    id: 1,
+    nome: 'Carlos Silva',
+    email: 'carlos@barbearia.com',
+    senha: 'senhaProvisoria123',
+    primeiroAcesso: true
+  }
+];
 
-// Rota de Health Check / Ping para manter o Render ativo
+let agendamentosGuardados = [];
+
+// 1. Rota de Ping / Health Check
 app.get('/api/ping', (req, res) => {
   res.status(200).send('OK');
 });
 
-// 📌 1. ROTA PARA CONSULTAR HORÁRIOS OCUPADOS
-// O front-end chama este endpoint ao escolher Data e Barbeiro
+// 2. Consulta de Horários Ocupados
 app.get('/api/horarios-ocupados', (req, res) => {
   const { data, barbeiro } = req.query;
 
   if (!data || !barbeiro) {
-    return res.status(400).json({ erro: 'Data e Barbeiro são obrigatórios.' });
+    return res.status(200).json([]);
   }
 
-  // Filtra e retorna apenas as horas que já foram reservadas
-  const ocupados = agendamentos
+  const ocupados = agendamentosGuardados
     .filter(a => a.data === data && a.barbeiro === barbeiro)
     .map(a => a.hora);
 
   res.status(200).json(ocupados);
 });
 
-// 📌 2. ROTA DE AGENDAMENTO E ENVIO DE E-MAIL
+// 3. Envio de E-mail de Confirmação
 app.post('/api/enviar-email-confirmacao', async (req, res) => {
   const { nome, email, barbeiro, servico, preco, data, hora } = req.body;
+  const dataFormatada = data ? data.split('-').reverse().join('/') : '';
 
-  if (!nome || !email || !barbeiro || !servico || !data || !hora) {
-    return res.status(400).json({ sucesso: false, erro: 'Preencha todos os campos do agendamento.' });
-  }
-
-  // Trava de segurança: impede que dois clientes agendem exatamente o mesmo horário
-  const jaAgendado = agendamentos.some(
-    a => a.data === data && a.barbeiro === barbeiro && a.hora === hora
-  );
-
-  if (jaAgendado) {
-    return res.status(400).json({
-      sucesso: false,
-      erro: 'Este horário acabou de ser reservado por outro cliente. Por favor, escolha outro horário.'
-    });
-  }
-
-  // Registra o agendamento no sistema
-  const novoAgendamento = { nome, email, barbeiro, servico, preco, data, hora, criadoEm: new Date() };
-  agendamentos.push(novoAgendamento);
-
-  const dataFormatada = data.split('-').reverse().join('/');
+  // Guarda o agendamento no servidor para bloquear o horário
+  agendamentosGuardados.push({ nome, email, barbeiro, servico, preco, data, hora });
 
   try {
     const dataEnvio = await resend.emails.send({
@@ -90,29 +81,57 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
       `
     });
 
-    console.log(`✅ Agendamento realizado com sucesso para ${nome} (${email}) às ${hora}hs.`);
-    res.status(200).json({ sucesso: true, mensagem: 'Agendamento e e-mail confirmados!' });
+    console.log(`✅ E-mail enviado para: ${email}`, dataEnvio);
+    res.status(200).json({ sucesso: true, mensagem: 'E-mail enviado com sucesso!' });
 
   } catch (error) {
-    console.error('❌ Erro ao enviar e-mail via Resend:', error);
-    // Mesmo se o e-mail falhar, o agendamento permanece salvo
-    res.status(500).json({
-      sucesso: false,
-      erro: 'Agendamento salvo, mas houve uma falha ao enviar o e-mail de confirmação.'
-    });
+    console.error('❌ Erro ao enviar e-mail:', error);
+    res.status(500).json({ sucesso: false, erro: error.toString() });
   }
-  // 📌 Rota de Login do Barbeiro
+});
+
+// 4. Login do Barbeiro
 app.post('/api/barbeiro/login', (req, res) => {
-  // código enviado no passo anterior...
+  const { email, senha } = req.body;
+  const barbeiro = usuariosBarbeiros.find(u => u.email === email && u.senha === senha);
+
+  if (!barbeiro) {
+    return res.status(401).json({ sucesso: false, erro: 'E-mail ou senha incorretos.' });
+  }
+
+  res.status(200).json({
+    sucesso: true,
+    barbeiro: {
+      id: barbeiro.id,
+      nome: barbeiro.nome,
+      email: barbeiro.email,
+      primeiroAcesso: barbeiro.primeiroAcesso
+    }
+  });
 });
 
-// 📌 Rota para Alterar Senha Obrigatória
+// 5. Alteração de Senha Obrigatória
 app.post('/api/barbeiro/alterar-senha', (req, res) => {
-  // código enviado no passo anterior...
+  const { idBarbeiro, novaSenha } = req.body;
+  const barbeiro = usuariosBarbeiros.find(u => u.id === idBarbeiro);
+
+  if (!barbeiro) {
+    return res.status(404).json({ sucesso: false, erro: 'Usuário não encontrado.' });
+  }
+
+  if (!novaSenha || novaSenha.length < 6) {
+    return res.status(400).json({ sucesso: false, erro: 'A nova senha deve ter pelo menos 6 caracteres.' });
+  }
+
+  barbeiro.senha = novaSenha;
+  barbeiro.primeiroAcesso = false;
+
+  console.log(`✅ Senha alterada com sucesso para o barbeiro ID: ${idBarbeiro}`);
+  res.status(200).json({ sucesso: true, mensagem: 'Senha alterada com sucesso!' });
 });
 
-// Configuração da porta com bind da rede do Render ('0.0.0.0')
+// Porta do servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Servidor da Barbearia Rafael rodando na porta ${PORT}`);
+  console.log(`🚀 Servidor rodando com sucesso na porta ${PORT}`);
 });
