@@ -21,15 +21,7 @@ let usuariosBarbeiros = [
     nome: 'Rafael Santos',
     email: 'admin',
     senha: '1234',
-    foto: 'https://barbeariarafa.netlify.app/img/rafael.jpg',
-    primeiroAcesso: false
-  },
-  {
-    id: 2,
-    nome: 'Carlos Silva',
-    email: 'carlos',
-    senha: '1234',
-    foto: 'https://barbeariarafa.netlify.app/img/carlos.jpg',
+    foto: 'https://barbeariarafa.netlify.app/img/rafael.jpeg',
     primeiroAcesso: false
   }
 ];
