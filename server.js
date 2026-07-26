@@ -14,13 +14,14 @@ app.use(express.urlencoded({ extended: true }));
 // Inicialização do Resend
 const resend = new Resend(process.env.RESEND_API_KEY || 're_123456');
 
-// Usuário admin inicial
+// Lista de barbeiros inicial (servida para todos os clientes)
 let usuariosBarbeiros = [
   {
     id: 1,
-    nome: 'Administrador',
+    nome: 'Rafael Santos',
     email: 'admin',
     senha: '1234',
+    foto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
     primeiroAcesso: true
   }
 ];
@@ -30,6 +31,16 @@ let agendamentosGuardados = [];
 // Rota de Ping / Health Check
 app.get('/api/ping', (req, res) => {
   return res.status(200).json({ status: 'OK', mensagem: 'Servidor ativo' });
+});
+
+// 🚀 NOVA ROTA: Retorna a lista pública de barbeiros para o index.html em qualquer celular
+app.get('/api/barbeiros', (req, res) => {
+  const listaPublica = usuariosBarbeiros.map(b => ({
+    id: b.id,
+    nome: b.nome,
+    foto: b.foto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
+  }));
+  return res.status(200).json(listaPublica);
 });
 
 // Consulta de Horários Ocupados
