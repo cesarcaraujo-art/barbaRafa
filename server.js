@@ -6,18 +6,60 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// COLE SUA CHAVE DO RESEND AQUI (Substitua a string abaixo pela sua API key iniciada em re_)
+// Inicializa a API do Resend lendo da variável de ambiente no Render (ou insira sua chave entre aspas se preferir)
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Rota de Health Check / Ping
+// Armazenamento em memória dos agendamentos
+// Nota: Para salvar de forma permanente quando o servidor reiniciar no Render, o recomendado é usar um banco de dados (ex: Supabase / PostgreSQL).
+let agendamentos = [];
+
+// Rota de Health Check / Ping para manter o Render ativo
 app.get('/api/ping', (req, res) => {
   res.status(200).send('OK');
 });
 
-// Endpoint de Envio de E-mail de Confirmação
+// 📌 1. ROTA PARA CONSULTAR HORÁRIOS OCUPADOS
+// O front-end chama este endpoint ao escolher Data e Barbeiro
+app.get('/api/horarios-ocupados', (req, res) => {
+  const { data, barbeiro } = req.query;
+
+  if (!data || !barbeiro) {
+    return res.status(400).json({ erro: 'Data e Barbeiro são obrigatórios.' });
+  }
+
+  // Filtra e retorna apenas as horas que já foram reservadas
+  const ocupados = agendamentos
+    .filter(a => a.data === data && a.barbeiro === barbeiro)
+    .map(a => a.hora);
+
+  res.status(200).json(ocupados);
+});
+
+// 📌 2. ROTA DE AGENDAMENTO E ENVIO DE E-MAIL
 app.post('/api/enviar-email-confirmacao', async (req, res) => {
   const { nome, email, barbeiro, servico, preco, data, hora } = req.body;
-  const dataFormatada = data ? data.split('-').reverse().join('/') : '';
+
+  if (!nome || !email || !barbeiro || !servico || !data || !hora) {
+    return res.status(400).json({ sucesso: false, erro: 'Preencha todos os campos do agendamento.' });
+  }
+
+  // Trava de segurança: impede que dois clientes agendem exatamente o mesmo horário
+  const jaAgendado = agendamentos.some(
+    a => a.data === data && a.barbeiro === barbeiro && a.hora === hora
+  );
+
+  if (jaAgendado) {
+    return res.status(400).json({
+      sucesso: false,
+      erro: 'Este horário acabou de ser reservado por outro cliente. Por favor, escolha outro horário.'
+    });
+  }
+
+  // Registra o agendamento no sistema
+  const novoAgendamento = { nome, email, barbeiro, servico, preco, data, hora, criadoEm: new Date() };
+  agendamentos.push(novoAgendamento);
+
+  const dataFormatada = data.split('-').reverse().join('/');
 
   try {
     const dataEnvio = await resend.emails.send({
@@ -29,7 +71,7 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
           <div style="max-width: 500px; background: #ffffff; padding: 25px; border-radius: 8px; margin: 0 auto; border-top: 4px solid #e0a96d;">
             <h2 style="color: #e0a96d; text-align: center; margin-top: 0;">Agendamento Confirmado!</h2>
             <p>Olá, <strong>${nome}</strong>!</p>
-            <p>Seu horário na barbearia foi reservado com sucesso. Confira os detalhes abaixo:</p>
+            <p>Seu horário na <strong>Barbearia Rafael</strong> foi reservado com sucesso. Confira os detalhes abaixo:</p>
             
             <hr style="border: none; border-top: 1px solid #eee; margin: 15px 0;">
             
@@ -48,16 +90,21 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
       `
     });
 
-    console.log(`✅ E-mail enviado via Resend para: ${email}`, dataEnvio);
-    res.status(200).json({ sucesso: true, mensagem: 'E-mail enviado com sucesso!' });
+    console.log(`✅ Agendamento realizado com sucesso para ${nome} (${email}) às ${hora}hs.`);
+    res.status(200).json({ sucesso: true, mensagem: 'Agendamento e e-mail confirmados!' });
 
   } catch (error) {
     console.error('❌ Erro ao enviar e-mail via Resend:', error);
-    res.status(500).json({ sucesso: false, erro: error.toString() });
+    // Mesmo se o e-mail falhar, o agendamento permanece salvo
+    res.status(500).json({
+      sucesso: false,
+      erro: 'Agendamento salvo, mas houve uma falha ao enviar o e-mail de confirmação.'
+    });
   }
 });
 
+// Configuração da porta com bind da rede do Render ('0.0.0.0')
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Servidor rodando com sucesso na porta ${PORT}`);
+  console.log(`🚀 Servidor da Barbearia Rafael rodando na porta ${PORT}`);
 });
