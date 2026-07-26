@@ -4,7 +4,7 @@ const cors = require('cors');
 
 const app = express();
 
-// 1. Configuração completa de CORS via biblioteca + Headers Manuais (Garante resposta de preflight)
+// 1. Configuração completa e definitiva de CORS
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -12,7 +12,7 @@ app.use(cors({
   credentials: false
 }));
 
-// Fallback de Headers para garantir que nenhuma requisição fique sem resposta de CORS
+// Fallback manual de cabeçalhos CORS
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -24,7 +24,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Parsers para ler JSON e formulários
+// Parsers para JSON e formulários
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -66,7 +66,7 @@ app.get('/api/horarios-ocupados', (req, res) => {
 
 // Envio de E-mail de Confirmação
 app.post('/api/enviar-email-confirmacao', async (req, res) => {
-  const { nome, email, barbeiro, servico, preco, data, hora } = req.body;
+  const { nome, email, barbeiro, servico, preco, data, hora } = req.body || {};
   const dataFormatada = data ? data.split('-').reverse().join('/') : '';
 
   agendamentosGuardados.push({ nome, email, barbeiro, servico, preco, data, hora });
