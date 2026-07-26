@@ -4,25 +4,14 @@ const cors = require('cors');
 
 const app = express();
 
-// 1. Configuração completa e definitiva de CORS
+// 1. Configuração ÚNICA e DEFINITIVA do CORS
+// Importante: NÃO misturar com app.use((req, res, next) => ...) para não duplicar cabeçalhos!
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  credentials: false
+  optionsSuccessStatus: 200
 }));
-
-// Fallback manual de cabeçalhos CORS
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  next();
-});
 
 // Parsers para JSON e formulários
 app.use(express.json());
@@ -44,7 +33,7 @@ let usuariosBarbeiros = [
 
 let agendamentosGuardados = [];
 
-// Rota de Health Check / Ping
+// Rota de Ping / Health Check
 app.get('/api/ping', (req, res) => {
   res.status(200).json({ status: 'OK', mensagem: 'Servidor ativo' });
 });
@@ -81,16 +70,12 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
           <div style="max-width: 500px; background: #ffffff; padding: 25px; border-radius: 8px; margin: 0 auto; border-top: 4px solid #e0a96d;">
             <h2 style="color: #e0a96d; text-align: center; margin-top: 0;">Agendamento Confirmado!</h2>
             <p>Olá, <strong>${nome}</strong>!</p>
-            <p>Seu horário na <strong>Barbearia Rafael</strong> foi reservado com sucesso. Confira os detalhes abaixo:</p>
+            <p>Seu horário na <strong>Barbearia Rafael</strong> foi reservado com sucesso.</p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 15px 0;">
             <p><strong>💈 Barbeiro:</strong> ${barbeiro}</p>
             <p><strong>✂️ Serviço:</strong> ${servico} (R$ ${parseFloat(preco || 0).toFixed(2).replace('.', ',')})</p>
             <p><strong>📅 Data:</strong> ${dataFormatada}</p>
             <p><strong>🕒 Horário:</strong> ${hora}hs</p>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 15px 0;">
-            <p style="font-size: 0.85rem; color: #777; text-align: center; margin-bottom: 0;">
-              Caso precise remarcar ou cancelar, entre em contato com antecedência. Te esperamos!
-            </p>
           </div>
         </div>
       `
@@ -105,7 +90,7 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
   }
 });
 
-// Rota de Login protegida contra falhas internas
+// Rota de Login
 app.post('/api/barbeiro/login', (req, res) => {
   try {
     const { email, senha } = req.body || {};
