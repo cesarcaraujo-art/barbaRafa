@@ -4,13 +4,16 @@ const cors = require('cors');
 
 const app = express();
 
-// 1. Configuração completa de CORS (trata requisições simples e OPTIONS de qualquer rota)
-app.use(cors({
+// 1. Configuração completa e definitiva de CORS
+const corsOptions = {
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200 // Suporte para navegadores legados e preflight
+};
 
+// Aplica o CORS para TODAS as rotas e trata o preflight (OPTIONS)
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Inicialização do Resend
