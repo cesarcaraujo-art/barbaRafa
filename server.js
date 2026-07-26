@@ -4,18 +4,29 @@ const cors = require('cors');
 
 const app = express();
 
-// 1. Configuração Robusta de CORS
-const corsOptions = {
+// 1. Configuração completa de CORS via biblioteca + Headers Manuais (Garante resposta de preflight)
+app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  optionsSuccessStatus: 200 // Responde status 200/204 no preflight para qualquer rota
-};
+  credentials: false
+}));
 
-// O app.use(cors(...)) já trata o preflight (OPTIONS) de forma automática e global
-app.use(cors(corsOptions));
+// Fallback de Headers para garantir que nenhuma requisição fique sem resposta de CORS
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
+});
 
+// Parsers para ler JSON e formulários
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Inicialização do Resend
 const resend = new Resend(process.env.RESEND_API_KEY || 're_123456');
@@ -33,7 +44,7 @@ let usuariosBarbeiros = [
 
 let agendamentosGuardados = [];
 
-// Rota de Ping / Health Check
+// Rota de Health Check / Ping
 app.get('/api/ping', (req, res) => {
   res.status(200).json({ status: 'OK', mensagem: 'Servidor ativo' });
 });
@@ -71,16 +82,12 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
             <h2 style="color: #e0a96d; text-align: center; margin-top: 0;">Agendamento Confirmado!</h2>
             <p>Olá, <strong>${nome}</strong>!</p>
             <p>Seu horário na <strong>Barbearia Rafael</strong> foi reservado com sucesso. Confira os detalhes abaixo:</p>
-            
             <hr style="border: none; border-top: 1px solid #eee; margin: 15px 0;">
-            
             <p><strong>💈 Barbeiro:</strong> ${barbeiro}</p>
             <p><strong>✂️ Serviço:</strong> ${servico} (R$ ${parseFloat(preco || 0).toFixed(2).replace('.', ',')})</p>
             <p><strong>📅 Data:</strong> ${dataFormatada}</p>
             <p><strong>🕒 Horário:</strong> ${hora}hs</p>
-            
             <hr style="border: none; border-top: 1px solid #eee; margin: 15px 0;">
-            
             <p style="font-size: 0.85rem; color: #777; text-align: center; margin-bottom: 0;">
               Caso precise remarcar ou cancelar, entre em contato com antecedência. Te esperamos!
             </p>
@@ -98,44 +105,59 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
   }
 });
 
-// Rota de Login
+// Rota de Login protegida contra falhas internas
 app.post('/api/barbeiro/login', (req, res) => {
-  const { email, senha } = req.body;
-  const barbeiro = usuariosBarbeiros.find(u => (u.email === email || u.nome === email) && u.senha === senha);
+  try {
+    const { email, senha } = req.body || {};
 
-  if (!barbeiro) {
-    return res.status(401).json({ sucesso: false, erro: 'Usuário ou senha incorretos.' });
-  }
-
-  res.status(200).json({
-    sucesso: true,
-    barbeiro: {
-      id: barbeiro.id,
-      nome: barbeiro.nome,
-      email: barbeiro.email,
-      primeiroAcesso: barbeiro.primeiroAcesso
+    if (!email || !senha) {
+      return res.status(400).json({ sucesso: false, erro: 'Preencha usuário e senha.' });
     }
-  });
+
+    const barbeiro = usuariosBarbeiros.find(u => (u.email === email || u.nome === email) && u.senha === senha);
+
+    if (!barbeiro) {
+      return res.status(401).json({ sucesso: false, erro: 'Usuário ou senha incorretos.' });
+    }
+
+    return res.status(200).json({
+      sucesso: true,
+      barbeiro: {
+        id: barbeiro.id,
+        nome: barbeiro.nome,
+        email: barbeiro.email,
+        primeiroAcesso: barbeiro.primeiroAcesso
+      }
+    });
+  } catch (err) {
+    console.error('❌ Erro na rota de login:', err);
+    return res.status(500).json({ sucesso: false, erro: 'Erro interno no servidor.' });
+  }
 });
 
 // Rota de Alteração de Senha
 app.post('/api/barbeiro/alterar-senha', (req, res) => {
-  const { idBarbeiro, novaSenha } = req.body;
-  const barbeiro = usuariosBarbeiros.find(u => u.id === idBarbeiro);
+  try {
+    const { idBarbeiro, novaSenha } = req.body || {};
+    const barbeiro = usuariosBarbeiros.find(u => u.id === idBarbeiro);
 
-  if (!barbeiro) {
-    return res.status(404).json({ sucesso: false, erro: 'Usuário não encontrado.' });
+    if (!barbeiro) {
+      return res.status(404).json({ sucesso: false, erro: 'Usuário não encontrado.' });
+    }
+
+    if (!novaSenha || novaSenha.length < 4) {
+      return res.status(400).json({ sucesso: false, erro: 'A nova senha deve ter pelo menos 4 caracteres.' });
+    }
+
+    barbeiro.senha = novaSenha;
+    barbeiro.primeiroAcesso = false;
+
+    console.log(`✅ Senha alterada com sucesso para o usuário: ${barbeiro.nome}`);
+    return res.status(200).json({ sucesso: true, mensagem: 'Senha alterada com sucesso!' });
+  } catch (err) {
+    console.error('❌ Erro ao alterar senha:', err);
+    return res.status(500).json({ sucesso: false, erro: 'Erro interno ao alterar senha.' });
   }
-
-  if (!novaSenha || novaSenha.length < 4) {
-    return res.status(400).json({ sucesso: false, erro: 'A nova senha deve ter pelo menos 4 caracteres.' });
-  }
-
-  barbeiro.senha = novaSenha;
-  barbeiro.primeiroAcesso = false;
-
-  console.log(`✅ Senha alterada com sucesso para o usuário: ${barbeiro.nome}`);
-  res.status(200).json({ sucesso: true, mensagem: 'Senha alterada com sucesso!' });
 });
 
 // Middleware para rotas inexistentes
