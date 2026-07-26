@@ -7,18 +7,18 @@ const app = express();
 // 1. CORS Simples e Efetivo
 app.use(cors());
 
-// 2. Middlewares de Parser
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// 2. Middlewares de Parser (aumentado o limite para aceitar imagens em Base64)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Inicialização do Resend
 const resend = new Resend(process.env.RESEND_API_KEY || 're_123456');
 
-// Lista de barbeiros inicial (servida para todos os clientes)
+// Lista de barbeiros inicial
 let usuariosBarbeiros = [
   {
     id: 1,
-    nome: 'Rafael Santos',
+    nome: 'Carlos Silva',
     email: 'admin',
     senha: '1234',
     foto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
@@ -33,7 +33,7 @@ app.get('/api/ping', (req, res) => {
   return res.status(200).json({ status: 'OK', mensagem: 'Servidor ativo' });
 });
 
-// 🚀 NOVA ROTA: Retorna a lista pública de barbeiros para o index.html em qualquer celular
+// Retorna a lista pública de barbeiros para o index.html e admin.html
 app.get('/api/barbeiros', (req, res) => {
   const listaPublica = usuariosBarbeiros.map(b => ({
     id: b.id,
@@ -41,6 +41,65 @@ app.get('/api/barbeiros', (req, res) => {
     foto: b.foto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
   }));
   return res.status(200).json(listaPublica);
+});
+
+// 🚀 NOVA ROTA: Adicionar Novo Barbeiro com Foto (upload em Base64)
+app.post('/api/barbeiros', (req, res) => {
+  try {
+    const { nome, foto } = req.body || {};
+    if (!nome) {
+      return res.status(400).json({ sucesso: false, erro: 'Informe o nome do barbeiro.' });
+    }
+
+    const novoBarbeiro = {
+      id: Date.now(),
+      nome: nome.trim(),
+      email: nome.toLowerCase().replace(/\s+/g, ''),
+      senha: '1234',
+      foto: foto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      primeiroAcesso: true
+    };
+
+    usuariosBarbeiros.push(novoBarbeiro);
+    console.log(`✅ Novo barbeiro cadastrado: ${novoBarbeiro.nome}`);
+    return res.status(200).json({ sucesso: true, barbeiro: novoBarbeiro });
+  } catch (err) {
+    console.error('❌ Erro ao adicionar barbeiro:', err);
+    return res.status(500).json({ sucesso: false, erro: 'Erro interno no servidor.' });
+  }
+});
+
+// 🚀 NOVA ROTA: Atualizar Foto ou Nome de Barbeiro Existente
+app.put('/api/barbeiros/:id', (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { nome, foto } = req.body || {};
+    const barbeiro = usuariosBarbeiros.find(b => b.id === id);
+
+    if (!barbeiro) {
+      return res.status(404).json({ sucesso: false, erro: 'Barbeiro não encontrado.' });
+    }
+
+    if (nome) barbeiro.nome = nome.trim();
+    if (foto) barbeiro.foto = foto;
+
+    console.log(`✅ Barbeiro atualizado: ${barbeiro.nome}`);
+    return res.status(200).json({ sucesso: true, barbeiro });
+  } catch (err) {
+    console.error('❌ Erro ao atualizar barbeiro:', err);
+    return res.status(500).json({ sucesso: false, erro: 'Erro interno no servidor.' });
+  }
+});
+
+// 🚀 NOVA ROTA: Remover Barbeiro
+app.delete('/api/barbeiros/:id', (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    usuariosBarbeiros = usuariosBarbeiros.filter(b => b.id !== id);
+    return res.status(200).json({ sucesso: true, mensagem: 'Barbeiro removido.' });
+  } catch (err) {
+    return res.status(500).json({ sucesso: false, erro: 'Erro ao remover barbeiro.' });
+  }
 });
 
 // Consulta de Horários Ocupados
@@ -93,7 +152,7 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
   }
 });
 
-// Rota de Login sem frescuras
+// Rota de Login
 app.post('/api/barbeiro/login', (req, res) => {
   try {
     const body = req.body || {};
