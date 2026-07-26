@@ -5,7 +5,12 @@ const cors = require('cors');
 const app = express();
 
 // Permite requisições de qualquer origem (inclusive Netlify)
-app.use(cors());
+// Substitua o trecho do app.use(cors()) por este no seu server.js:
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // Inicialização do Resend
