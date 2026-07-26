@@ -4,16 +4,19 @@ const cors = require('cors');
 
 const app = express();
 
-// 1. Configuração completa e definitiva de CORS
-const corsOptions = {
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  optionsSuccessStatus: 200 // Suporte para navegadores legados e preflight
-};
+// 1. Middleware manual de CORS (trata requisições simples e responde preflight OPTIONS imediatamente)
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  // Responde com status 200 para todas as verificações Preflight (OPTIONS)
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
-// Aplica o CORS para TODAS as rotas e trata o preflight (OPTIONS)
-app.use(cors(corsOptions));
 app.use(express.json());
 
 // Inicialização do Resend
