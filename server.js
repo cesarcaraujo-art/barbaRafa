@@ -7,7 +7,7 @@ app.use(express.json());
 app.use(cors());
 
 // COLE SUA API KEY DO RESEND AQUI (re_...)
-const resend = new Resend('SUA_API_KEY_DO_RESEND_AQUI');
+const resend = new Resend('re_dLE81Mao_YF381ZBg37bwcbVprwKzXzoV');
 
 // Rota de Health Check
 app.get('/api/ping', (req, res) => {
