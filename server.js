@@ -21,7 +21,7 @@ const transporter = nodemailer.createTransport({
   port: 465,
   secure: true, // Força conexão SSL (Obrigatório na porta 465)
   auth: {
-    user: process.env.GMAIL_USER || 'cesar.caraujo@gmail.com',
+    user: 'cesar.caraujo@gmail.com',
     pass: 'zitm dnvs taqk qrta' // Pega a Senha de App configurada no Render
   },
   tls: {
