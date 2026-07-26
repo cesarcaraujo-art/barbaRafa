@@ -7,7 +7,7 @@ app.use(express.json());
 app.use(cors());
 
 // COLE SUA CHAVE DO RESEND AQUI (Substitua a string abaixo pela sua API key iniciada em re_)
-const resend = new Resend('re_dLE81Mao_YF381ZBg37bwcbVprwKzXzoV');
+const resend = new Resend('re_cj2gJuRM_CU1ExMMrwSuzSJUfGfw4mXPy');
 
 // Rota de Health Check / Ping
 app.get('/api/ping', (req, res) => {
