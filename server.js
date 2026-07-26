@@ -4,12 +4,16 @@ const cors = require('cors');
 
 const app = express();
 
-// Permite requisições de qualquer origem (inclusive Netlify)
+// 1. Configuração completa de CORS (Permite requisições do Netlify)
 app.use(cors({
-  origin: '*',
+  origin: '*', // Permite que a barbearia no Netlify acesse a API
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
+
+// 2. Trata e responde requisições PREFLIGHT (OPTIONS) automaticamente
+app.options('*', cors());
 
 app.use(express.json());
 
