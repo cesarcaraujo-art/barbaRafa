@@ -18,11 +18,11 @@ const resend = new Resend(process.env.RESEND_API_KEY || 're_123456');
 let usuariosBarbeiros = [
   {
     id: 1,
-    nome: 'Carlos Silva',
+    nome: 'Rafael Santos',
     email: 'admin',
-    senha: '1234',
-    foto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-    primeiroAcesso: true
+    senha: 'kurama01',
+    foto: 'https://barbeariarafa.netlify.app/img/rafael.jpeg',
+    primeiroAcesso: no
   }
 ];
 
