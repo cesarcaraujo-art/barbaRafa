@@ -101,6 +101,14 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
       erro: 'Agendamento salvo, mas houve uma falha ao enviar o e-mail de confirmação.'
     });
   }
+  // 📌 Rota de Login do Barbeiro
+app.post('/api/barbeiro/login', (req, res) => {
+  // código enviado no passo anterior...
+});
+
+// 📌 Rota para Alterar Senha Obrigatória
+app.post('/api/barbeiro/alterar-senha', (req, res) => {
+  // código enviado no passo anterior...
 });
 
 // Configuração da porta com bind da rede do Render ('0.0.0.0')
