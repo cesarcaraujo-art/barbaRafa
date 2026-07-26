@@ -4,17 +4,16 @@ const cors = require('cors');
 
 const app = express();
 
-// 1. Configuração Robusta de CORS usando a biblioteca 'cors'
+// 1. Configuração Robusta de CORS
 const corsOptions = {
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  optionsSuccessStatus: 200 // Responde com status 200 para preflight em navegadores antigos/legados
+  optionsSuccessStatus: 200 // Responde status 200/204 no preflight para qualquer rota
 };
 
-// Trata automaticamente o CORS e as requisições Preflight (OPTIONS)
+// O app.use(cors(...)) já trata o preflight (OPTIONS) de forma automática e global
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 
 app.use(express.json());
 
