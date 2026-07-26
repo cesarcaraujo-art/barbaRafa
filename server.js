@@ -4,13 +4,12 @@ const cors = require('cors');
 
 const app = express();
 
-// 1. Middleware manual de CORS (trata requisições simples e responde preflight OPTIONS imediatamente)
+// 1. CORS Global no topo absoluto — garante que NENHUMA rota (mesmo 404) fique sem cabeçalho
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   
-  // Responde com status 200 para todas as verificações Preflight (OPTIONS)
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
@@ -22,7 +21,7 @@ app.use(express.json());
 // Inicialização do Resend
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Usuário admin inicial com primeiro acesso pendente
+// Banco de dados em memória
 let usuariosBarbeiros = [
   {
     id: 1,
@@ -35,9 +34,14 @@ let usuariosBarbeiros = [
 
 let agendamentosGuardados = [];
 
+// Rota raiz (para testes no navegador)
+app.get('/', (req, res) => {
+  res.status(200).send('API Barbearia Rafael está online!');
+});
+
 // 1. Rota de Ping / Health Check
 app.get('/api/ping', (req, res) => {
-  res.status(200).send('OK');
+  res.status(200).json({ status: 'OK', mensagem: 'Servidor ativo' });
 });
 
 // 2. Consulta de Horários Ocupados
@@ -138,6 +142,11 @@ app.post('/api/barbeiro/alterar-senha', (req, res) => {
 
   console.log(`✅ Senha alterada com sucesso para o usuário: ${barbeiro.nome}`);
   res.status(200).json({ sucesso: true, mensagem: 'Senha alterada com sucesso!' });
+});
+
+// Tratamento global para rotas inexistentes (evita erro de CORS em requisições incorretas)
+app.use((req, res) => {
+  res.status(404).json({ erro: 'Rota não encontrada' });
 });
 
 // Porta do servidor
