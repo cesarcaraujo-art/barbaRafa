@@ -21,7 +21,7 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
 
   try {
     const dataEnvio = await resend.emails.send({
-      from: 'Barbearia Estilo & Corte <onboarding@resend.dev>',
+      from: 'Barbearia Rafael <onboarding@resend.dev>',
       to: email,
       subject: '✂️ Confirmação do seu Agendamento - Barbearia',
       html: `
