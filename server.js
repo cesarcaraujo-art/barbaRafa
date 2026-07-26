@@ -4,16 +4,12 @@ const cors = require('cors');
 
 const app = express();
 
-// 1. Configuração completa de CORS (Permite requisições do Netlify)
+// 1. Configuração completa de CORS (trata requisições simples e OPTIONS de qualquer rota)
 app.use(cors({
-  origin: '*', // Permite que a barbearia no Netlify acesse a API
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
-
-// 2. Trata e responde requisições PREFLIGHT (OPTIONS) automaticamente
-app.options('*', cors());
 
 app.use(express.json());
 
@@ -33,7 +29,7 @@ let usuariosBarbeiros = [
 
 let agendamentosGuardados = [];
 
-// 1. Rota de Ping / Health Check (Acordar o servidor no Render)
+// 1. Rota de Ping / Health Check
 app.get('/api/ping', (req, res) => {
   res.status(200).send('OK');
 });
@@ -58,7 +54,6 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
   const { nome, email, barbeiro, servico, preco, data, hora } = req.body;
   const dataFormatada = data ? data.split('-').reverse().join('/') : '';
 
-  // Guarda o agendamento no servidor para bloquear o horário
   agendamentosGuardados.push({ nome, email, barbeiro, servico, preco, data, hora });
 
   try {
@@ -99,7 +94,7 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
   }
 });
 
-// 4. Login do Admin / Barbeiro (Valida por email ou nome)
+// 4. Login do Admin / Barbeiro
 app.post('/api/barbeiro/login', (req, res) => {
   const { email, senha } = req.body;
   const barbeiro = usuariosBarbeiros.find(u => (u.email === email || u.nome === email) && u.senha === senha);
