@@ -20,10 +20,10 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 let usuariosBarbeiros = [
   {
     id: 1,
-    nome: 'Carlos Silva',
-    email: 'carlos@barbearia.com',
-    senha: 'senhaProvisoria123',
-    primeiroAcesso: true
+    nome: 'Administrador',
+    email: 'admin',
+    senha: '1234',          // Senha inicial temporária
+    primeiroAcesso: true   // Força a troca no primeiro login
   }
 ];
 
@@ -95,13 +95,13 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
   }
 });
 
-// 4. Login do Barbeiro
+// 📌 1. ROTA DE LOGIN DO BARBEIRO / ADMIN
 app.post('/api/barbeiro/login', (req, res) => {
   const { email, senha } = req.body;
   const barbeiro = usuariosBarbeiros.find(u => u.email === email && u.senha === senha);
 
   if (!barbeiro) {
-    return res.status(401).json({ sucesso: false, erro: 'E-mail ou senha incorretos.' });
+    return res.status(401).json({ sucesso: false, erro: 'Usuário ou senha incorretos.' });
   }
 
   res.status(200).json({
@@ -115,7 +115,7 @@ app.post('/api/barbeiro/login', (req, res) => {
   });
 });
 
-// 5. Alteração de Senha Obrigatória
+// 📌 2. ROTA PARA REFINIR SENHA OBRIGATÓRIA
 app.post('/api/barbeiro/alterar-senha', (req, res) => {
   const { idBarbeiro, novaSenha } = req.body;
   const barbeiro = usuariosBarbeiros.find(u => u.id === idBarbeiro);
@@ -124,14 +124,15 @@ app.post('/api/barbeiro/alterar-senha', (req, res) => {
     return res.status(404).json({ sucesso: false, erro: 'Usuário não encontrado.' });
   }
 
-  if (!novaSenha || novaSenha.length < 6) {
-    return res.status(400).json({ sucesso: false, erro: 'A nova senha deve ter pelo menos 6 caracteres.' });
+  if (!novaSenha || novaSenha.length < 4) {
+    return res.status(400).json({ sucesso: false, erro: 'A nova senha deve ter pelo menos 4 caracteres.' });
   }
 
+  // Atualiza a senha na memória do servidor e desativa o primeiro acesso
   barbeiro.senha = novaSenha;
   barbeiro.primeiroAcesso = false;
 
-  console.log(`✅ Senha alterada com sucesso para o barbeiro ID: ${idBarbeiro}`);
+  console.log(`✅ Senha alterada com sucesso para o usuário: ${barbeiro.nome}`);
   res.status(200).json({ sucesso: true, mensagem: 'Senha alterada com sucesso!' });
 });
 
