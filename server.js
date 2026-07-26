@@ -4,14 +4,19 @@ const cors = require('cors');
 
 const app = express();
 
-// 1. Configuração ÚNICA e DEFINITIVA do CORS
-// Importante: NÃO misturar com app.use((req, res, next) => ...) para não duplicar cabeçalhos!
-app.use(cors({
+// 1. Configuração completa do CORS
+const corsOptions = {
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   optionsSuccessStatus: 200
-}));
+};
+
+// Aplica o CORS para todas as rotas
+app.use(cors(corsOptions));
+
+// 2. Responde imediatamente às requisições Preflight (OPTIONS)
+app.options('*', cors(corsOptions));
 
 // Parsers para JSON e formulários
 app.use(express.json());
