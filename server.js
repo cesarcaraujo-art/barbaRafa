@@ -5,31 +5,31 @@ const cors = require('cors');
 const app = express();
 
 // Permite requisições de qualquer origem (inclusive Netlify)
-// Substitua o trecho do app.use(cors()) por este no seu server.js:
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(express.json());
 
 // Inicialização do Resend
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Banco de dados em memória para barbeiros e agendamentos
+// Usuário admin inicial com primeiro acesso pendente
 let usuariosBarbeiros = [
   {
     id: 1,
     nome: 'Administrador',
     email: 'admin',
-    senha: '1234',          // Senha inicial temporária
-    primeiroAcesso: true   // Força a troca no primeiro login
+    senha: '1234',
+    primeiroAcesso: true
   }
 ];
 
 let agendamentosGuardados = [];
 
-// 1. Rota de Ping / Health Check
+// 1. Rota de Ping / Health Check (Acordar o servidor no Render)
 app.get('/api/ping', (req, res) => {
   res.status(200).send('OK');
 });
@@ -95,10 +95,10 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
   }
 });
 
-// 📌 1. ROTA DE LOGIN DO BARBEIRO / ADMIN
+// 4. Login do Admin / Barbeiro (Valida por email ou nome)
 app.post('/api/barbeiro/login', (req, res) => {
   const { email, senha } = req.body;
-  const barbeiro = usuariosBarbeiros.find(u => u.email === email && u.senha === senha);
+  const barbeiro = usuariosBarbeiros.find(u => (u.email === email || u.nome === email) && u.senha === senha);
 
   if (!barbeiro) {
     return res.status(401).json({ sucesso: false, erro: 'Usuário ou senha incorretos.' });
@@ -115,7 +115,7 @@ app.post('/api/barbeiro/login', (req, res) => {
   });
 });
 
-// 📌 2. ROTA PARA REFINIR SENHA OBRIGATÓRIA
+// 5. Alteração de Senha Obrigatória
 app.post('/api/barbeiro/alterar-senha', (req, res) => {
   const { idBarbeiro, novaSenha } = req.body;
   const barbeiro = usuariosBarbeiros.find(u => u.id === idBarbeiro);
@@ -128,7 +128,6 @@ app.post('/api/barbeiro/alterar-senha', (req, res) => {
     return res.status(400).json({ sucesso: false, erro: 'A nova senha deve ter pelo menos 4 caracteres.' });
   }
 
-  // Atualiza a senha na memória do servidor e desativa o primeiro acesso
   barbeiro.senha = novaSenha;
   barbeiro.primeiroAcesso = false;
 
