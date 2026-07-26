@@ -4,19 +4,13 @@ const cors = require('cors');
 
 const app = express();
 
-// 1. Configuração completa do CORS
-const corsOptions = {
+// 1. Configuração de CORS compatível com Express 4 e Express 5
+app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   optionsSuccessStatus: 200
-};
-
-// Aplica o CORS para todas as rotas
-app.use(cors(corsOptions));
-
-// 2. Responde imediatamente às requisições Preflight (OPTIONS)
-app.options('*', cors(corsOptions));
+}));
 
 // Parsers para JSON e formulários
 app.use(express.json());
@@ -38,7 +32,7 @@ let usuariosBarbeiros = [
 
 let agendamentosGuardados = [];
 
-// Rota de Ping / Health Check
+// Rota de Health Check / Ping
 app.get('/api/ping', (req, res) => {
   res.status(200).json({ status: 'OK', mensagem: 'Servidor ativo' });
 });
@@ -150,7 +144,7 @@ app.post('/api/barbeiro/alterar-senha', (req, res) => {
   }
 });
 
-// Middleware para rotas inexistentes
+// Middleware para rotas inexistentes (compatível com Express 5)
 app.use((req, res) => {
   res.status(404).json({ erro: 'Rota não encontrada' });
 });
