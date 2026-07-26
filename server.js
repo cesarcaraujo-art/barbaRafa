@@ -4,7 +4,7 @@ const cors = require('cors');
 
 const app = express();
 
-// 1. CORS Global no topo absoluto — garante que NENHUMA rota (mesmo 404) fique sem cabeçalho
+// Middleware robusto para liberar CORS em todas as origens e métodos
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -19,9 +19,9 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 // Inicialização do Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY || 're_123456');
 
-// Banco de dados em memória
+// Usuário admin inicial com a flag de primeiro acesso
 let usuariosBarbeiros = [
   {
     id: 1,
@@ -34,17 +34,12 @@ let usuariosBarbeiros = [
 
 let agendamentosGuardados = [];
 
-// Rota raiz (para testes no navegador)
-app.get('/', (req, res) => {
-  res.status(200).send('API Barbearia Rafael está online!');
-});
-
-// 1. Rota de Ping / Health Check
+// Rota de Health Check / Ping
 app.get('/api/ping', (req, res) => {
   res.status(200).json({ status: 'OK', mensagem: 'Servidor ativo' });
 });
 
-// 2. Consulta de Horários Ocupados
+// Consulta de Horários Ocupados
 app.get('/api/horarios-ocupados', (req, res) => {
   const { data, barbeiro } = req.query;
 
@@ -59,7 +54,7 @@ app.get('/api/horarios-ocupados', (req, res) => {
   res.status(200).json(ocupados);
 });
 
-// 3. Envio de E-mail de Confirmação
+// Envio de E-mail de Confirmação
 app.post('/api/enviar-email-confirmacao', async (req, res) => {
   const { nome, email, barbeiro, servico, preco, data, hora } = req.body;
   const dataFormatada = data ? data.split('-').reverse().join('/') : '';
@@ -104,7 +99,7 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
   }
 });
 
-// 4. Login do Admin / Barbeiro
+// Rota de Login do Barbeiro / Admin
 app.post('/api/barbeiro/login', (req, res) => {
   const { email, senha } = req.body;
   const barbeiro = usuariosBarbeiros.find(u => (u.email === email || u.nome === email) && u.senha === senha);
@@ -124,7 +119,7 @@ app.post('/api/barbeiro/login', (req, res) => {
   });
 });
 
-// 5. Alteração de Senha Obrigatória
+// Rota para Alterar Senha Obrigatória
 app.post('/api/barbeiro/alterar-senha', (req, res) => {
   const { idBarbeiro, novaSenha } = req.body;
   const barbeiro = usuariosBarbeiros.find(u => u.id === idBarbeiro);
@@ -144,13 +139,8 @@ app.post('/api/barbeiro/alterar-senha', (req, res) => {
   res.status(200).json({ sucesso: true, mensagem: 'Senha alterada com sucesso!' });
 });
 
-// Tratamento global para rotas inexistentes (evita erro de CORS em requisições incorretas)
-app.use((req, res) => {
-  res.status(404).json({ erro: 'Rota não encontrada' });
-});
-
 // Porta do servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Servidor rodando com sucesso na porta ${PORT}`);
+  console.log(`🚀 Servidor rodando na porta ${PORT}`);
 });
