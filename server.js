@@ -7,22 +7,30 @@ const app = express();
 // 1. CORS Simples e Efetivo
 app.use(cors());
 
-// 2. Middlewares de Parser (aumentado o limite para aceitar imagens em Base64)
+// 2. Middlewares de Parser
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Inicialização do Resend
 const resend = new Resend(process.env.RESEND_API_KEY || 're_123456');
 
-// Lista de barbeiros inicial
+// 3. BARBEIROS FIXOS COM FOTOS DO NETLIFY (Substitua pelos seus arquivos em img/)
 let usuariosBarbeiros = [
   {
     id: 1,
     nome: 'Rafael Santos',
     email: 'admin',
-    senha: 'kurama01',
-    foto: 'https://barbeariarafa.netlify.app/img/rafael.jpeg',
-    primeiroAcesso: no
+    senha: '1234',
+    foto: 'https://barbeariarafa.netlify.app/img/rafael.jpg',
+    primeiroAcesso: false
+  },
+  {
+    id: 2,
+    nome: 'Carlos Silva',
+    email: 'carlos',
+    senha: '1234',
+    foto: 'https://barbeariarafa.netlify.app/img/carlos.jpg',
+    primeiroAcesso: false
   }
 ];
 
@@ -33,17 +41,17 @@ app.get('/api/ping', (req, res) => {
   return res.status(200).json({ status: 'OK', mensagem: 'Servidor ativo' });
 });
 
-// Retorna a lista pública de barbeiros para o index.html e admin.html
+// Retorna a lista de barbeiros para o frontend
 app.get('/api/barbeiros', (req, res) => {
   const listaPublica = usuariosBarbeiros.map(b => ({
     id: b.id,
     nome: b.nome,
-    foto: b.foto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
+    foto: b.foto || 'https://barbeariarafa.netlify.app/img/rafael.jpg'
   }));
   return res.status(200).json(listaPublica);
 });
 
-// 🚀 NOVA ROTA: Adicionar Novo Barbeiro com Foto (upload em Base64)
+// Cadastrar Barbeiro
 app.post('/api/barbeiros', (req, res) => {
   try {
     const { nome, foto } = req.body || {};
@@ -56,12 +64,11 @@ app.post('/api/barbeiros', (req, res) => {
       nome: nome.trim(),
       email: nome.toLowerCase().replace(/\s+/g, ''),
       senha: '1234',
-      foto: foto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      foto: foto || 'https://barbeariarafa.netlify.app/img/rafael.jpg',
       primeiroAcesso: true
     };
 
     usuariosBarbeiros.push(novoBarbeiro);
-    console.log(`✅ Novo barbeiro cadastrado: ${novoBarbeiro.nome}`);
     return res.status(200).json({ sucesso: true, barbeiro: novoBarbeiro });
   } catch (err) {
     console.error('❌ Erro ao adicionar barbeiro:', err);
@@ -69,7 +76,7 @@ app.post('/api/barbeiros', (req, res) => {
   }
 });
 
-// 🚀 NOVA ROTA: Atualizar Foto ou Nome de Barbeiro Existente
+// Atualizar Barbeiro
 app.put('/api/barbeiros/:id', (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -83,7 +90,6 @@ app.put('/api/barbeiros/:id', (req, res) => {
     if (nome) barbeiro.nome = nome.trim();
     if (foto) barbeiro.foto = foto;
 
-    console.log(`✅ Barbeiro atualizado: ${barbeiro.nome}`);
     return res.status(200).json({ sucesso: true, barbeiro });
   } catch (err) {
     console.error('❌ Erro ao atualizar barbeiro:', err);
@@ -91,7 +97,7 @@ app.put('/api/barbeiros/:id', (req, res) => {
   }
 });
 
-// 🚀 NOVA ROTA: Remover Barbeiro
+// Remover Barbeiro
 app.delete('/api/barbeiros/:id', (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -125,7 +131,7 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
   agendamentosGuardados.push({ nome, email, barbeiro, servico, preco, data, hora });
 
   try {
-    const dataEnvio = await resend.emails.send({
+    await resend.emails.send({
       from: 'Barbearia Rafael <onboarding@resend.dev>',
       to: email,
       subject: '✂️ Confirmação do seu Agendamento - Barbearia Rafael',
@@ -211,7 +217,7 @@ app.post('/api/barbeiro/alterar-senha', (req, res) => {
   }
 });
 
-// Middleware para rotas inexistentes
+// Rota 404
 app.use((req, res) => {
   return res.status(404).json({ erro: 'Rota não encontrada' });
 });
