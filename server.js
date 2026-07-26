@@ -17,7 +17,7 @@ app.get('/api/ping', (req, res) => {
 
 // Configuração do Nodemailer usando a porta 465 com SSL
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
+  host: '142.250.141.108',
   port: 465,
   secure: true, // Força conexão SSL (Obrigatório na porta 465)
   auth: {
