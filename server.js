@@ -4,24 +4,24 @@ const cors = require('cors');
 
 const app = express();
 
-// Middleware robusto para liberar CORS em todas as origens e métodos
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  next();
-});
+// 1. Configuração Robusta de CORS usando a biblioteca 'cors'
+const corsOptions = {
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  optionsSuccessStatus: 200 // Responde com status 200 para preflight em navegadores antigos/legados
+};
+
+// Trata automaticamente o CORS e as requisições Preflight (OPTIONS)
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(express.json());
 
 // Inicialização do Resend
 const resend = new Resend(process.env.RESEND_API_KEY || 're_123456');
 
-// Usuário admin inicial com a flag de primeiro acesso
+// Usuário admin inicial
 let usuariosBarbeiros = [
   {
     id: 1,
@@ -34,7 +34,7 @@ let usuariosBarbeiros = [
 
 let agendamentosGuardados = [];
 
-// Rota de Health Check / Ping
+// Rota de Ping / Health Check
 app.get('/api/ping', (req, res) => {
   res.status(200).json({ status: 'OK', mensagem: 'Servidor ativo' });
 });
@@ -99,7 +99,7 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
   }
 });
 
-// Rota de Login do Barbeiro / Admin
+// Rota de Login
 app.post('/api/barbeiro/login', (req, res) => {
   const { email, senha } = req.body;
   const barbeiro = usuariosBarbeiros.find(u => (u.email === email || u.nome === email) && u.senha === senha);
@@ -119,7 +119,7 @@ app.post('/api/barbeiro/login', (req, res) => {
   });
 });
 
-// Rota para Alterar Senha Obrigatória
+// Rota de Alteração de Senha
 app.post('/api/barbeiro/alterar-senha', (req, res) => {
   const { idBarbeiro, novaSenha } = req.body;
   const barbeiro = usuariosBarbeiros.find(u => u.id === idBarbeiro);
@@ -137,6 +137,11 @@ app.post('/api/barbeiro/alterar-senha', (req, res) => {
 
   console.log(`✅ Senha alterada com sucesso para o usuário: ${barbeiro.nome}`);
   res.status(200).json({ sucesso: true, mensagem: 'Senha alterada com sucesso!' });
+});
+
+// Middleware para rotas inexistentes
+app.use((req, res) => {
+  res.status(404).json({ erro: 'Rota não encontrada' });
 });
 
 // Porta do servidor
