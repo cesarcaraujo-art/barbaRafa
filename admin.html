@@ -706,6 +706,50 @@
       }
     }
   });
+  async function executarTrocaSenha() {
+  const novaSenha = document.getElementById('novaSenhaInput').value.trim();
+  const msgSenha = document.getElementById('msgSenha');
+
+  if (!novaSenha || novaSenha.length < 4) {
+    msgSenha.style.color = '#dc3545';
+    msgSenha.innerText = '⚠️ A senha deve ter pelo menos 4 caracteres.';
+    msgSenha.style.display = 'block';
+    return;
+  }
+
+  // Recupera as informações do usuário logado salvas no login
+  const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado') || '{}');
+  const idBarbeiro = usuarioLogado.id || 'admin_master_id';
+
+  try {
+    const resp = await fetch(`${URL_BACKEND}/api/barbeiro/alterar-senha`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        idBarbeiro: idBarbeiro,
+        novaSenha: novaSenha
+      })
+    });
+
+    const dados = await resp.json();
+
+    if (resp.ok && dados.sucesso) {
+      msgSenha.style.color = '#28a745';
+      msgSenha.innerText = '✅ Senha alterada com sucesso!';
+      msgSenha.style.display = 'block';
+      document.getElementById('novaSenhaInput').value = '';
+    } else {
+      msgSenha.style.color = '#dc3545';
+      msgSenha.innerText = `❌ ${dados.erro || 'Erro ao alterar senha.'}`;
+      msgSenha.style.display = 'block';
+    }
+  } catch (err) {
+    console.error('Erro ao trocar senha:', err);
+    msgSenha.style.color = '#dc3545';
+    msgSenha.innerText = '❌ Erro ao conectar com o servidor.';
+    msgSenha.style.display = 'block';
+  }
+}
 </script>
 
 </body>
