@@ -68,7 +68,17 @@
       <h2>⚙️ Painel de Gestão</h2>
       <span class="logout-link" onclick="logout()">Sair</span>
     </div>
-
+<!-- SEÇÃO DE ALTERAÇÃO DE SENHA -->
+<div class="card-alterar-senha" style="background: #ffffff; padding: 20px; border-radius: 8px; margin: 20px 0; border-top: 4px solid #e0a96d; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+  <h3 style="margin-top: 0; color: #333; font-size: 1.1rem;">🔒 Alterar Senha de Acesso</h3>
+  <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+    <input type="password" id="novaSenhaInput" placeholder="Digite a nova senha (mín. 4 caracteres)" style="flex: 1; min-width: 200px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+    <button onclick="executarTrocaSenha()" style="background-color: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+      Salvar Nova Senha
+    </button>
+  </div>
+  <p id="msgSenha" style="margin-top: 10px; font-size: 0.9rem; font-weight: bold; display: none;"></p>
+</div>
     <!-- SELETOR DO BARBEIRO ATIVO -->
     <div class="barber-selector-bar">
       <label for="barbeiroAtivoSelect">Você está gerenciando o perfil de:</label>
