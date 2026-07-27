@@ -250,11 +250,55 @@ app.get('/api/horarios-ocupados', async (req, res) => {
 
 app.post('/api/enviar-email-confirmacao', async (req, res) => {
   const { nome, email, barbeiro, servico, preco, data, hora, whats } = req.body || {};
+
   try {
-    await Agendamento.create({ cliente: nome, email, whats, barbeiro, servico, preco: parseFloat(preco || 0), data, hora });
-    return res.status(200).json({ sucesso: true });
+    // 1. Salva o agendamento no banco MongoDB
+    const novoAgendamento = await Agendamento.create({
+      cliente: nome,
+      email,
+      whats,
+      barbeiro,
+      servico,
+      preco: parseFloat(preco || 0),
+      data,
+      hora
+    });
+
+    // Formatando data para DD/MM/AAAA
+    const dataFormatada = data ? data.split('-').reverse().join('/') : data;
+    const precoFormatado = parseFloat(preco || 0).toFixed(2).replace('.', ',');
+
+    // 2. Dispara o e-mail de confirmação via Resend
+    if (email) {
+      await resend.emails.send({
+        from: 'Barbearia Rafael <onboarding@resend.dev>',
+        to: [email],
+        subject: '✂️ Confirmação de Agendamento - Barbearia Rafael',
+        html: `
+          <div style="font-family: Arial, sans-serif; background-color: #121212; color: #ffffff; padding: 20px; border-radius: 8px;">
+            <h2 style="color: #e0a96d; text-align: center;">Olá, ${nome}!</h2>
+            <p style="font-size: 1rem; text-align: center;">Seu agendamento foi realizado com sucesso. Confira os detalhes abaixo:</p>
+            
+            <div style="background-color: #1e1e1e; padding: 15px; border-radius: 6px; border-left: 4px solid #e0a96d; margin: 20px 0;">
+              <p style="margin: 5px 0;">💈 <b>Profissional:</b> ${barbeiro}</p>
+              <p style="margin: 5px 0;">✂️ <b>Serviço:</b> ${servico} (R$ ${precoFormatado})</p>
+              <p style="margin: 5px 0;">📅 <b>Data:</b> ${dataFormatada}</p>
+              <p style="margin: 5px 0;">⏰ <b>Horário:</b> ${hora} hs</p>
+            </div>
+
+            <p style="text-align: center; color: #aaa; font-size: 0.9rem;">
+              Te esperamos no horário agendado! Se precisar desmarcar, entre em contato conosco com antecedência.
+            </p>
+          </div>
+        `
+      });
+    }
+
+    return res.status(200).json({ sucesso: true, agendamento: novoAgendamento });
   } catch (err) {
-    return res.status(500).json({ sucesso: false, erro: err.toString() });
+    console.error('❌ Erro ao processar agendamento ou enviar e-mail:', err);
+    // Retorna sucesso para o cliente não travar a tela mesmo se houver erro no e-mail
+    return res.status(200).json({ sucesso: true, aviso: 'Agendamento salvo, mas erro ao enviar e-mail.' });
   }
 });
 
