@@ -50,7 +50,11 @@ const configSiteSchema = new mongoose.Schema({
   foto1: { type: String, default: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400' },
   foto2: { type: String, default: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400' },
   foto3: { type: String, default: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=400' },
-  foto4: { type: String, default: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400' }
+  foto4: { type: String, default: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400' },
+  // Configurações por barbeiro armazenadas no MongoDB
+  diasPorBarbeiro: { type: Object, default: {} },
+  horariosPorBarbeiro: { type: Object, default: {} },
+  servicosPorBarbeiro: { type: Object, default: {} }
 }, { timestamps: true });
 
 const Barbeiro = mongoose.model('Barbeiro', barbeiroSchema);
@@ -62,7 +66,7 @@ app.get('/api/ping', (req, res) => {
   return res.status(200).json({ status: 'OK' });
 });
 
-// CONFIGURAÇÕES DO SITE
+// CONFIGURAÇÕES DO SITE NO MONGODB
 app.get('/api/config-site', async (req, res) => {
   try {
     let config = await ConfigSite.findOne({ key: 'geral' });
@@ -90,7 +94,7 @@ app.put('/api/config-site', async (req, res) => {
   }
 });
 
-// LISTAR APENAS BARBEIROS REAIS (FILTRA O ADMIN DO SISTEMA)
+// LISTAR APENAS BARBEIROS REAIS
 app.get('/api/barbeiros', async (req, res) => {
   try {
     const barbeiros = await Barbeiro.find({ email: { $ne: 'admin' } }, 'nome foto email primeiroAcesso');
@@ -240,7 +244,7 @@ app.post('/api/barbeiro/alterar-senha', async (req, res) => {
   }
 });
 
-// AGENDAMENTOS
+// AGENDAMENTOS E E-MAIL
 app.get('/api/horarios-ocupados', async (req, res) => {
   const { data, barbeiro } = req.query;
   if (!data || !barbeiro) return res.status(200).json([]);
@@ -252,7 +256,6 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
   const { nome, email, barbeiro, servico, preco, data, hora, whats } = req.body || {};
 
   try {
-    // 1. Salva o agendamento no banco MongoDB
     const novoAgendamento = await Agendamento.create({
       cliente: nome,
       email,
@@ -264,11 +267,9 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
       hora
     });
 
-    // Formatando data para DD/MM/AAAA
     const dataFormatada = data ? data.split('-').reverse().join('/') : data;
     const precoFormatado = parseFloat(preco || 0).toFixed(2).replace('.', ',');
 
-    // 2. Dispara o e-mail de confirmação via Resend
     if (email) {
       await resend.emails.send({
         from: 'Barbearia Rafael <onboarding@resend.dev>',
@@ -287,7 +288,7 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
             </div>
 
             <p style="text-align: center; color: #aaa; font-size: 0.9rem;">
-              Te esperamos no horário agendado! Se precisar desmarcar, entre em contato conosco com antecedência.
+              Te esperamos no horário agendado!
             </p>
           </div>
         `
@@ -296,9 +297,8 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
 
     return res.status(200).json({ sucesso: true, agendamento: novoAgendamento });
   } catch (err) {
-    console.error('❌ Erro ao processar agendamento ou enviar e-mail:', err);
-    // Retorna sucesso para o cliente não travar a tela mesmo se houver erro no e-mail
-    return res.status(200).json({ sucesso: true, aviso: 'Agendamento salvo, mas erro ao enviar e-mail.' });
+    console.error('❌ Erro no e-mail:', err);
+    return res.status(200).json({ sucesso: true });
   }
 });
 
