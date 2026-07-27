@@ -14,7 +14,28 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     html { scroll-behavior: smooth; }
-    body { background-color: #121212; color: #f5f5f5; padding-top: 70px; }
+    
+    /* PROTEÇÃO: IMPEDE A SELEÇÃO DE TEXTO E ARRASTE DE IMAGENS */
+    body {
+      background-color: #121212;
+      color: #f5f5f5;
+      padding-top: 70px;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    img {
+      -webkit-user-drag: none;
+      -khtml-user-drag: none;
+      -moz-user-drag: none;
+      -o-user-drag: none;
+      user-drag: none;
+      pointer-events: none;
+    }
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(20px); }
@@ -182,6 +203,7 @@
   💬
 </a>
 
+<!-- SCRIPT DE SISTEMA -->
 <script>
   const URL_BACKEND = 'https://barbarafa.onrender.com';
 
@@ -190,7 +212,6 @@
   const todosHorariosPadrao = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
   const fotoPadrao = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
 
-  // BUSCA AS CONFIGURAÇÕES, FOTOS E ENDEREÇO/MAPA DIRETO DO MONGODB
   async function aplicarConfiguracoesSite() {
     try {
       const resp = await fetch(`${URL_BACKEND}/api/config-site`);
@@ -200,7 +221,6 @@
         if (configSite.horarioTxt) document.getElementById('displayHorarioTxt').innerText = configSite.horarioTxt;
         if (configSite.endereco) {
           document.getElementById('displayEndereco').innerText = configSite.endereco;
-          // ATUALIZA O MAPA AUTOMATICAMENTE BASEADO NO ENDEREÇO
           const enderecoFormatado = encodeURIComponent(configSite.endereco);
           document.getElementById('iframeMapa').src = `https://maps.google.com/maps?q=${enderecoFormatado}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
         }
@@ -452,6 +472,63 @@
     configurarDataMinima();
     carregarBarbeiros();
   });
+</script>
+
+<!-- SCRIPT DE PROTEÇÃO (DIFICULTA A CÓPIA E INSPEÇÃO DO CÓDIGO) -->
+<script>
+  // 1. Bloqueia o Menu de Contexto (Botão Direito do Mouse)
+  document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+  });
+
+  // 2. Bloqueia Atalhos de Teclado Comuns para Inspeção e Cópia
+  document.addEventListener('keydown', function(e) {
+    // Bloqueia F12
+    if (e.keyCode === 123) {
+      e.preventDefault();
+      return false;
+    }
+    
+    // Bloqueia Ctrl+Shift+I (Inspecionar)
+    if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.key === 'I' || e.key === 'i')) {
+      e.preventDefault();
+      return false;
+    }
+
+    // Bloqueia Ctrl+Shift+J (Console)
+    if (e.ctrlKey && e.shiftKey && (e.keyCode === 74 || e.key === 'J' || e.key === 'j')) {
+      e.preventDefault();
+      return false;
+    }
+
+    // Bloqueia Ctrl+U (Ver Código-Fonte)
+    if (e.ctrlKey && (e.keyCode === 85 || e.key === 'U' || e.key === 'u')) {
+      e.preventDefault();
+      return false;
+    }
+
+    // Bloqueia Ctrl+S (Salvar Página)
+    if (e.ctrlKey && (e.keyCode === 83 || e.key === 'S' || e.key === 's')) {
+      e.preventDefault();
+      return false;
+    }
+
+    // Bloqueia Ctrl+Shift+C (Inspecionar Elemento)
+    if (e.ctrlKey && e.shiftKey && (e.keyCode === 67 || e.key === 'C' || e.key === 'c')) {
+      e.preventDefault();
+      return false;
+    }
+  });
+
+  // 3. Trava de Depuração se as DevTools forem abertas
+  setInterval(function() {
+    const startTime = performance.now();
+    debugger;
+    const endTime = performance.now();
+    if (endTime - startTime > 100) {
+      document.body.innerHTML = "<div style='color:white;text-align:center;padding:50px;'>Acesso negado às ferramentas de desenvolvedor.</div>";
+    }
+  }, 1000);
 </script>
 
 </body>
