@@ -13,7 +13,7 @@
     input[type="text"], input[type="email"], input[type="password"], input[type="number"], select { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #444; background: #2a2a2a; color: #fff; margin-bottom: 12px; font-size: 0.95rem; }
     
     .nav-tabs { display: flex; gap: 6px; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; overflow-x: auto; }
-    .tab-btn { flex: 1; min-width: 90px; padding: 10px 5px; background: #2a2a2a; border: 1px solid #444; color: #ccc; border-radius: 6px; cursor: pointer; font-weight: bold; text-align: center; font-size: 0.8rem; transition: 0.2s; white-space: nowrap; }
+    .tab-btn { flex: 1; min-width: 80px; padding: 10px 5px; background: #2a2a2a; border: 1px solid #444; color: #ccc; border-radius: 6px; cursor: pointer; font-weight: bold; text-align: center; font-size: 0.8rem; transition: 0.2s; white-space: nowrap; }
     .tab-btn.active { background: #e0a96d; color: #121212; border-color: #e0a96d; }
 
     button { cursor: pointer; transition: 0.2s; font-weight: bold; width: 100%; padding: 10px; border-radius: 6px; border: none; font-size: 0.95rem; }
@@ -66,12 +66,7 @@
   <div id="adminPanel">
     <div class="header-actions">
       <h2>⚙️ Painel de Gestão</h2>
-      <div style="display: flex; gap: 12px; align-items: center;">
-        <button onclick="abrirModalTrocaSenha()" style="background: #2a2a2a; color: #e0a96d; border: 1px solid #e0a96d; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; width: auto;">
-          🔑 Alterar Senha
-        </button>
-        <span class="logout-link" onclick="logout()">Sair</span>
-      </div>
+      <span class="logout-link" onclick="logout()">Sair</span>
     </div>
 
     <!-- SELETOR DO BARBEIRO ATIVO -->
@@ -84,10 +79,11 @@
     <!-- Navegação por Abas -->
     <div class="nav-tabs">
       <div class="tab-btn active" onclick="trocarAba('agendaTab', this)">📅 Agenda</div>
-      <div class="tab-btn" onclick="trocarAba('diasTab', this)">🗓️ Meus Dias</div>
-      <div class="tab-btn" onclick="trocarAba('horariosTab', this)">⏰ Meus Horários</div>
-      <div class="tab-btn" onclick="trocarAba('servicosTab', this)">✂️ Meus Serviços</div>
+      <div class="tab-btn" onclick="trocarAba('diasTab', this)">🗓️ Dias</div>
+      <div class="tab-btn" onclick="trocarAba('horariosTab', this)">⏰ Horários</div>
+      <div class="tab-btn" onclick="trocarAba('servicosTab', this)">✂️ Serviços</div>
       <div class="tab-btn" onclick="trocarAba('perfilTab', this)">👤 Equipe</div>
+      <div class="tab-btn" onclick="trocarAba('siteTab', this)">⚙️ Site</div>
     </div>
 
     <!-- ABA 1: AGENDA -->
@@ -157,48 +153,39 @@
       <div id="adminList"></div>
     </div>
 
-  </div>
-</div>
+    <!-- ABA 6: CONFIGURAÇÕES DO SITE (ENDEREÇO, WHATSAPP, HORÁRIOS) -->
+    <div id="siteTab" class="tab-content" style="display: none;">
+      <div class="admin-card">
+        <label>📱 WhatsApp para Contato (com DDD, apenas números):</label>
+        <input type="text" id="configWhats" placeholder="Ex: 5513999999999">
 
-<!-- MODAL DE ALTERAÇÃO MANUAL DE SENHA -->
-<div id="modalTrocaSenha" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center;">
-  <div style="background: #1e1e1e; padding: 25px; border-radius: 10px; max-width: 400px; width: 90%; border-top: 4px solid #e0a96d; color: #fff; position: relative;">
-    <button onclick="fecharModalTrocaSenha()" style="position: absolute; top: 10px; right: 12px; background: transparent; color: #ff5252; border: none; font-size: 1.2rem; cursor: pointer; width: auto; padding: 0;">✖</button>
-    
-    <h3 style="color: #e0a96d; margin-bottom: 15px;">🔑 Alterar Senha</h3>
-    
-    <label style="display: block; margin-bottom: 6px; font-weight: bold; font-size: 0.9rem; color: #ccc;">Nova Senha:</label>
-    <input type="password" id="inputNovaSenhaModal" placeholder="Mínimo 4 caracteres" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #444; background: #2a2a2a; color: #fff; margin-bottom: 15px;">
+        <label>🕒 Texto do Horário de Atendimento:</label>
+        <input type="text" id="configHorarioTxt" placeholder="Ex: TER - SÁB | 08H - 19H">
 
-    <button onclick="salvarSenhaPeloModal()" class="btn-primary" style="width: 100%; padding: 10px;">
-      Salvar Nova Senha
-    </button>
-  </div>
-</div>
+        <label>📍 Endereço Completo:</label>
+        <input type="text" id="configEndereco" placeholder="Ex: Rua Santo Antônio, 622 - Praia Grande/SP">
 
-<!-- MODAL DE TROCA OBRIGATÓRIA DE SENHA (PRIMEIRO ACESSO) -->
-<div id="modalPrimeiroAcesso" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center;">
-  <div style="background: #1e1e1e; padding: 30px; border-radius: 10px; max-width: 400px; width: 90%; border-top: 4px solid #e0a96d; color: #fff;">
-    <h2 style="color: #e0a96d; margin-bottom: 10px;">🔒 Primeiro Acesso</h2>
-    <p style="font-size: 0.9rem; color: #ccc; margin-bottom: 20px;">
-      Por razões de segurança, você precisa cadastrar uma nova senha pessoal antes de acessar o painel da barbearia.
-    </p>
+        <label>📸 Foto Galeria 1 (URL da imagem):</label>
+        <input type="text" id="configFoto1" placeholder="https://...">
 
-    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Nova Senha:</label>
-    <input type="password" id="novaSenha" placeholder="Mínimo 4 caracteres">
+        <label>📸 Foto Galeria 2 (URL da imagem):</label>
+        <input type="text" id="configFoto2" placeholder="https://...">
 
-    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Confirme a Nova Senha:</label>
-    <input type="password" id="confirmarNovaSenha" placeholder="Repita a nova senha">
+        <label>📸 Foto Galeria 3 (URL da imagem):</label>
+        <input type="text" id="configFoto3" placeholder="https://...">
 
-    <button onclick="salvarNovaSenha()" style="width: 100%; padding: 12px; background: #e0a96d; border: none; font-weight: bold; border-radius: 5px; cursor: pointer; color: #121212; margin-top: 10px;">
-      Salvar Nova Senha e Entrar
-    </button>
+        <label>📸 Foto Galeria 4 (URL da imagem):</label>
+        <input type="text" id="configFoto4" placeholder="https://...">
+
+        <button class="btn-add" onclick="salvarConfiguracoesSite()">💾 Salvar Dados do Site</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
 <script>
   const URL_BACKEND = 'https://barbarafa.onrender.com';
-
   const fotoPadrao = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
   const todosHorariosPadrao = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
 
@@ -261,6 +248,7 @@
     if (abaAtiva.includes('horariosTab')) renderizarHorariosConfig();
     if (abaAtiva.includes('servicosTab')) renderizarServicos();
     if (abaAtiva.includes('perfilTab')) renderizarBarbeiros();
+    if (abaAtiva.includes('siteTab')) carregarConfiguracoesSite();
   }
 
   function renderizarAgenda() {
@@ -502,7 +490,6 @@
     }
   }
 
-  // 🚀 ATUALIZADO: Normaliza _id e id do MongoDB
   async function carregarEAtualizarBarbeirosServidor() {
     try {
       const resp = await fetch(`${URL_BACKEND}/api/barbeiros`);
@@ -522,7 +509,6 @@
     }
   }
 
-  // 🚀 ATUALIZADO: Altera o nome no servidor no Render
   async function atualizarBarbeiro(id, nome) {
     if (!nome.trim()) return;
 
@@ -545,7 +531,6 @@
     }
   }
 
-  // 🚀 ATUALIZADO: Exclui o barbeiro do servidor no Render usando o ID do Mongo
   async function removerBarbeiro(id) {
     if (!confirm('Tem certeza que deseja remover este barbeiro?')) return;
 
@@ -567,7 +552,6 @@
     }
   }
 
-  // 🚀 ATUALIZADO: Garante que os IDs de texto (Strings) funcionem com aspas nos atributos HTML
   function renderizarBarbeiros() {
     const list = getBarbeiros();
     const container = document.getElementById('adminList');
@@ -588,7 +572,43 @@
     });
   }
 
-  // 🚀 AUTENTICAÇÃO DIRETA E DIRETO AO PONTO
+  // FUNÇÕES DE GERENCIAMENTO DAS CONFIGURAÇÕES DO SITE
+  function carregarConfiguracoesSite() {
+    const configSite = JSON.parse(localStorage.getItem('configuracoesSite')) || {
+      whats: '5513999999999',
+      horarioTxt: 'TER - SÁB | 08H - 19H',
+      endereco: 'Rua Santo Antônio, 622 - Vila Caiçara - Praia Grande/SP',
+      foto1: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400',
+      foto2: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400',
+      foto3: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=400',
+      foto4: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400'
+    };
+
+    document.getElementById('configWhats').value = configSite.whats || '';
+    document.getElementById('configHorarioTxt').value = configSite.horarioTxt || '';
+    document.getElementById('configEndereco').value = configSite.endereco || '';
+    document.getElementById('configFoto1').value = configSite.foto1 || '';
+    document.getElementById('configFoto2').value = configSite.foto2 || '';
+    document.getElementById('configFoto3').value = configSite.foto3 || '';
+    document.getElementById('configFoto4').value = configSite.foto4 || '';
+  }
+
+  function salvarConfiguracoesSite() {
+    const configSite = {
+      whats: document.getElementById('configWhats').value.trim(),
+      horarioTxt: document.getElementById('configHorarioTxt').value.trim(),
+      endereco: document.getElementById('configEndereco').value.trim(),
+      foto1: document.getElementById('configFoto1').value.trim(),
+      foto2: document.getElementById('configFoto2').value.trim(),
+      foto3: document.getElementById('configFoto3').value.trim(),
+      foto4: document.getElementById('configFoto4').value.trim()
+    };
+
+    localStorage.setItem('configuracoesSite', JSON.stringify(configSite));
+    alert('✅ Configurações do site salvas com sucesso!');
+  }
+
+  // AUTENTICAÇÃO
   async function realizarLogin(e) {
     e.preventDefault();
     const email = document.getElementById('loginUser').value;
@@ -603,9 +623,7 @@
     try {
       const resposta = await fetch(`${URL_BACKEND}/api/barbeiro/login`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json' 
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), senha: senha.trim() })
       });
 
@@ -614,116 +632,19 @@
       if (resposta.ok && dados.sucesso) {
         sessionStorage.setItem('barbeiroLogado', JSON.stringify(dados.barbeiro));
         sessionStorage.setItem('autenticado', 'true');
-
-        if (dados.barbeiro.primeiroAcesso === true) {
-          document.getElementById('modalPrimeiroAcesso').style.display = 'flex';
-        } else {
-          await mostrarPainel();
-        }
+        await mostrarPainel();
       } else {
         alert(dados.erro || 'Usuário ou senha incorretos!');
       }
 
     } catch (erro) {
       console.error('Erro de conexão:', erro);
-      alert('Erro de comunicação com o servidor. Tente novamente em alguns instantes.');
+      alert('Erro de comunicação com o servidor.');
     } finally {
       if (btnSubmit) {
         btnSubmit.innerText = 'Entrar no Painel';
         btnSubmit.disabled = false;
       }
-    }
-  }
-
-  // CONTROLE DO MODAL DE ALTERAÇÃO MANUAL DE SENHA
-  function abrirModalTrocaSenha() {
-    document.getElementById('inputNovaSenhaModal').value = '';
-    document.getElementById('modalTrocaSenha').style.display = 'flex';
-  }
-
-  function fecharModalTrocaSenha() {
-    document.getElementById('modalTrocaSenha').style.display = 'none';
-  }
-
-  async function salvarSenhaPeloModal() {
-    const novaSenha = document.getElementById('inputNovaSenhaModal').value.trim();
-
-    if (!novaSenha || novaSenha.length < 4) {
-      alert('A nova senha precisa ter no mínimo 4 caracteres.');
-      return;
-    }
-
-    const barbeiroStr = sessionStorage.getItem('barbeiroLogado');
-    const barbeiro = barbeiroStr ? JSON.parse(barbeiroStr) : {};
-    const idBarbeiro = barbeiro.id || barbeiro._id || 'admin_master_id';
-
-    try {
-      const resp = await fetch(`${URL_BACKEND}/api/barbeiro/alterar-senha`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          idBarbeiro: idBarbeiro,
-          novaSenha: novaSenha
-        })
-      });
-
-      const dados = await resp.json();
-
-      if (resp.ok && dados.sucesso) {
-        alert('✅ Senha alterada com sucesso!');
-        fecharModalTrocaSenha();
-      } else {
-        alert(`❌ ${dados.erro || 'Erro ao alterar senha.'}`);
-      }
-    } catch (err) {
-      console.error('Erro ao alterar senha:', err);
-      alert('❌ Erro de conexão com o servidor ao alterar senha.');
-    }
-  }
-
-  async function salvarNovaSenha() {
-    const barbeiroStr = sessionStorage.getItem('barbeiroLogado');
-    if (!barbeiroStr) return alert('Sessão expirada. Faça login novamente.');
-
-    const barbeiro = JSON.parse(barbeiroStr);
-    const novaSenha = document.getElementById('novaSenha').value;
-    const confirmarNovaSenha = document.getElementById('confirmarNovaSenha').value;
-
-    if (!novaSenha || novaSenha.length < 4) {
-      alert('A nova senha precisa ter no mínimo 4 caracteres.');
-      return;
-    }
-
-    if (novaSenha !== confirmarNovaSenha) {
-      alert('As senhas não coincidem!');
-      return;
-    }
-
-    try {
-      const resposta = await fetch(`${URL_BACKEND}/api/barbeiro/alterar-senha`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          idBarbeiro: barbeiro.id || barbeiro._id,
-          novaSenha: novaSenha
-        })
-      });
-
-      const dados = await resposta.json();
-
-      if (dados.sucesso) {
-        alert('Senha redefinida com sucesso! Bem-vindo.');
-        document.getElementById('modalPrimeiroAcesso').style.display = 'none';
-        
-        barbeiro.primeiroAcesso = false;
-        sessionStorage.setItem('barbeiroLogado', JSON.stringify(barbeiro));
-        await mostrarPainel();
-      } else {
-        alert(dados.erro || 'Falha ao redefinir a senha.');
-      }
-    } catch (erro) {
-      console.error('Erro ao alterar a senha:', erro);
-      alert('Erro de conexão ao alterar a senha.');
     }
   }
 
@@ -741,26 +662,9 @@
     renderizarAbaAtual();
   }
 
-  // ⚡ Função de aquecimento do Render ao carregar a página
-  async function acordarServidor() {
-    try {
-      await fetch(`${URL_BACKEND}/api/ping`);
-      console.log('⚡ Servidor Render ativo e pronto!');
-    } catch (erro) {
-      console.warn('Iniciando aquecimento do servidor Render...');
-    }
-  }
-
-  window.addEventListener('DOMContentLoaded', async () => {
-    acordarServidor();
-
+  window.addEventListener('DOMContentLoaded', () => {
     if (sessionStorage.getItem('autenticado') === 'true') {
-      const barbeiroLogado = JSON.parse(sessionStorage.getItem('barbeiroLogado') || '{}');
-      if (barbeiroLogado.primeiroAcesso) {
-        document.getElementById('modalPrimeiroAcesso').style.display = 'flex';
-      } else {
-        await mostrarPainel();
-      }
+      mostrarPainel();
     }
   });
 </script>
