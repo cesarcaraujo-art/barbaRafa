@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
+  <!-- DESATIVADOR DE CACHE DO NAVEGADOR E CELULARES -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  
   <meta property="og:title" content="Barbearia Rafael - Agendamento Online">
   <meta property="og:description" content="Agende seu horário com rapidez e facilidade em um ambiente climatizado e exclusivo.">
   <meta property="og:image" content="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800">
@@ -15,7 +20,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     html { scroll-behavior: smooth; }
     
-    /* PROTEÇÃO: IMPEDE A SELEÇÃO DE TEXTO E ARRASTE DE IMAGENS */
+    /* IMPEDE A SELEÇÃO DE TEXTO E ARRASTE DE IMAGENS */
     body {
       background-color: #121212;
       color: #f5f5f5;
@@ -203,7 +208,6 @@
   💬
 </a>
 
-<!-- SCRIPT DE SISTEMA -->
 <script>
   const URL_BACKEND = 'https://barbarafa.onrender.com';
 
@@ -212,10 +216,9 @@
   const todosHorariosPadrao = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
   const fotoPadrao = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
 
-  // BUSCA AS CONFIGURAÇÕES, FOTOS, DIAS, HORÁRIOS E SERVIÇOS DIRETO DO MONGODB
   async function aplicarConfiguracoesSite() {
     try {
-      const resp = await fetch(`${URL_BACKEND}/api/config-site`);
+      const resp = await fetch(`${URL_BACKEND}/api/config-site?nocache=${Date.now()}`);
       if (resp.ok) {
         const configSite = await resp.json();
 
@@ -233,7 +236,6 @@
         if (configSite.foto3) document.getElementById('displayFoto3').src = configSite.foto3;
         if (configSite.foto4) document.getElementById('displayFoto4').src = configSite.foto4;
 
-        // Atualiza a memória local com as configurações sincronizadas da nuvem
         if (configSite.diasPorBarbeiro) localStorage.setItem('diasAtendimentoPorBarbeiro', JSON.stringify(configSite.diasPorBarbeiro));
         if (configSite.horariosPorBarbeiro) localStorage.setItem('horariosPorBarbeiro', JSON.stringify(configSite.horariosPorBarbeiro));
         if (configSite.servicosPorBarbeiro) localStorage.setItem('servicosPorBarbeiro', JSON.stringify(configSite.servicosPorBarbeiro));
@@ -283,7 +285,7 @@
     let barbeiros = [];
 
     try {
-      const resposta = await fetch(`${URL_BACKEND}/api/barbeiros`);
+      const resposta = await fetch(`${URL_BACKEND}/api/barbeiros?nocache=${Date.now()}`);
       if (resposta.ok) {
         barbeiros = await resposta.json();
       }
@@ -370,7 +372,7 @@
 
     let ocupadosServer = [];
     try {
-      const resp = await fetch(`${URL_BACKEND}/api/horarios-ocupados?data=${dataVal}&barbeiro=${encodeURIComponent(barbeiroSelecionadoObj.nome)}`);
+      const resp = await fetch(`${URL_BACKEND}/api/horarios-ocupados?data=${dataVal}&barbeiro=${encodeURIComponent(barbeiroSelecionadoObj.nome)}&nocache=${Date.now()}`);
       if (resp.ok) {
         ocupadosServer = await resp.json();
       }
@@ -480,53 +482,38 @@
   });
 </script>
 
-<!-- SCRIPT DE PROTEÇÃO (DIFICULTA A CÓPIA E INSPEÇÃO DO CÓDIGO) -->
 <script>
-  // 1. Bloqueia o Menu de Contexto (Botão Direito do Mouse)
   document.addEventListener('contextmenu', function(e) {
     e.preventDefault();
   });
 
-  // 2. Bloqueia Atalhos de Teclado Comuns para Inspeção e Cópia
   document.addEventListener('keydown', function(e) {
-    // Bloqueia F12
     if (e.keyCode === 123) {
       e.preventDefault();
       return false;
     }
-    
-    // Bloqueia Ctrl+Shift+I (Inspecionar)
     if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.key === 'I' || e.key === 'i')) {
       e.preventDefault();
       return false;
     }
-
-    // Bloqueia Ctrl+Shift+J (Console)
     if (e.ctrlKey && e.shiftKey && (e.keyCode === 74 || e.key === 'J' || e.key === 'j')) {
       e.preventDefault();
       return false;
     }
-
-    // Bloqueia Ctrl+U (Ver Código-Fonte)
     if (e.ctrlKey && (e.keyCode === 85 || e.key === 'U' || e.key === 'u')) {
       e.preventDefault();
       return false;
     }
-
-    // Bloqueia Ctrl+S (Salvar Página)
     if (e.ctrlKey && (e.keyCode === 83 || e.key === 'S' || e.key === 's')) {
       e.preventDefault();
       return false;
     }
-
-    // Bloqueia Ctrl+Shift+C (Inspecionar Elemento)
     if (e.ctrlKey && e.shiftKey && (e.keyCode === 67 || e.key === 'C' || e.key === 'c')) {
       e.preventDefault();
       return false;
     }
   });
 
-  // 3. Trava de Depuração se as DevTools forem abertas
   setInterval(function() {
     const startTime = performance.now();
     debugger;
