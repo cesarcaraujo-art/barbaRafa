@@ -47,6 +47,7 @@ const configSiteSchema = new mongoose.Schema({
   whats: { type: String, default: '5513999999999' },
   horarioTxt: { type: String, default: 'TER - SÁB | 08H - 19H' },
   endereco: { type: String, default: 'Rua Santo Antônio, 622 - Vila Caiçara - Praia Grande/SP' },
+  fotoShareWhatsapp: { type: String, default: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800' },
   foto1: { type: String, default: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400' },
   foto2: { type: String, default: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400' },
   foto3: { type: String, default: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=400' },
