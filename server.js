@@ -62,7 +62,7 @@ app.get('/api/ping', (req, res) => {
   return res.status(200).json({ status: 'OK' });
 });
 
-// CONFIGURAÇÕES DO SITE NO MONGODB
+// CONFIGURAÇÕES DO SITE
 app.get('/api/config-site', async (req, res) => {
   try {
     let config = await ConfigSite.findOne({ key: 'geral' });
@@ -90,10 +90,10 @@ app.put('/api/config-site', async (req, res) => {
   }
 });
 
-// LISTAR BARBEIROS
+// LISTAR APENAS BARBEIROS REAIS (FILTRA O ADMIN DO SISTEMA)
 app.get('/api/barbeiros', async (req, res) => {
   try {
-    const barbeiros = await Barbeiro.find({}, 'nome foto email primeiroAcesso');
+    const barbeiros = await Barbeiro.find({ email: { $ne: 'admin' } }, 'nome foto email primeiroAcesso');
     return res.status(200).json(barbeiros.map(b => ({
       id: b._id,
       nome: b.nome,
@@ -150,7 +150,7 @@ app.delete('/api/barbeiros/:id', async (req, res) => {
   }
 });
 
-// 🔓 ROTA DE LOGIN COM RECUPERAÇÃO DE ACESSO
+// LOGIN
 app.post('/api/barbeiro/login', async (req, res) => {
   try {
     const body = req.body || {};
@@ -161,13 +161,11 @@ app.post('/api/barbeiro/login', async (req, res) => {
       return res.status(400).json({ sucesso: false, erro: 'Preencha usuário e senha.' });
     }
 
-    // 1. Tenta encontrar o barbeiro cadastrado no banco
     let barbeiro = await Barbeiro.findOne({
       $or: [{ email: entrada }, { nome: new RegExp(`^${entrada}$`, 'i') }],
       senha: senhaInput
     });
 
-    // 2. Se for admin e não encontrou (ou o banco foi limpo), recria/recupera para garantir o seu acesso
     if (!barbeiro && (entrada === 'admin' || entrada === 'administrador')) {
       let adminExistente = await Barbeiro.findOne({ email: 'admin' });
 
@@ -204,12 +202,12 @@ app.post('/api/barbeiro/login', async (req, res) => {
   }
 });
 
-// ALTERAR SENHA
+// ROTA DEDICADA PARA ALTERAÇÃO DE SENHA
 app.post('/api/barbeiro/alterar-senha', async (req, res) => {
   try {
     const { idBarbeiro, novaSenha } = req.body || {};
     if (!novaSenha || novaSenha.length < 4) {
-      return res.status(400).json({ sucesso: false, erro: 'Mínimo 4 caracteres.' });
+      return res.status(400).json({ sucesso: false, erro: 'A senha deve ter no mínimo 4 caracteres.' });
     }
 
     let barbeiro = null;
@@ -218,9 +216,7 @@ app.post('/api/barbeiro/alterar-senha', async (req, res) => {
     }
 
     if (!barbeiro) {
-      barbeiro = await Barbeiro.findOne({
-        $or: [{ email: 'admin' }, { nome: new RegExp('administrador', 'i') }]
-      });
+      barbeiro = await Barbeiro.findOne({ email: 'admin' });
     }
 
     if (!barbeiro) {
@@ -239,6 +235,7 @@ app.post('/api/barbeiro/alterar-senha', async (req, res) => {
 
     return res.status(200).json({ sucesso: true, mensagem: 'Senha alterada com sucesso!' });
   } catch (err) {
+    console.error('Erro ao alterar senha:', err);
     return res.status(500).json({ sucesso: false, erro: 'Erro ao alterar senha.' });
   }
 });
