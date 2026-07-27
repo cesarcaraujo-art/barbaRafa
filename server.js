@@ -93,7 +93,7 @@ app.put('/api/config-site', async (req, res) => {
   }
 });
 
-// LISTAR APENAS BARBEIROS REAIS
+// LISTAR BARBEIROS REAIS
 app.get('/api/barbeiros', async (req, res) => {
   try {
     const barbeiros = await Barbeiro.find({ email: { $ne: 'admin' } }, 'nome foto email primeiroAcesso');
@@ -243,7 +243,35 @@ app.post('/api/barbeiro/alterar-senha', async (req, res) => {
   }
 });
 
-// AGENDAMENTOS E E-MAIL
+// AGENDAMENTOS
+app.get('/api/agendamentos', async (req, res) => {
+  try {
+    const agendamentos = await Agendamento.find().sort({ createdAt: -1 });
+    return res.status(200).json(agendamentos.map(a => ({
+      id: a._id,
+      cliente: a.cliente,
+      email: a.email,
+      whats: a.whats,
+      barbeiro: a.barbeiro,
+      servico: a.servico,
+      preco: a.preco,
+      data: a.data,
+      hora: a.hora
+    })));
+  } catch (err) {
+    return res.status(500).json({ erro: 'Erro ao buscar agendamentos.' });
+  }
+});
+
+app.delete('/api/agendamentos/:id', async (req, res) => {
+  try {
+    await Agendamento.findByIdAndDelete(req.params.id);
+    return res.status(200).json({ sucesso: true, mensagem: 'Agendamento removido.' });
+  } catch (err) {
+    return res.status(500).json({ sucesso: false, erro: 'Erro ao remover agendamento.' });
+  }
+});
+
 app.get('/api/horarios-ocupados', async (req, res) => {
   const { data, barbeiro } = req.query;
   if (!data || !barbeiro) return res.status(200).json([]);
@@ -296,7 +324,7 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
 
     return res.status(200).json({ sucesso: true, agendamento: novoAgendamento });
   } catch (err) {
-    console.error('❌ Erro no e-mail:', err);
+    console.error('❌ Erro no agendamento/e-mail:', err);
     return res.status(200).json({ sucesso: true });
   }
 });
