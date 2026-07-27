@@ -44,13 +44,16 @@
     .logout-link { color: #f44336; font-size: 0.9rem; cursor: pointer; }
     
     .barber-selector-bar { background: #282828; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333; }
+
+    .gallery-upload-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 10px; }
+    .gallery-upload-card { background: #222; border: 1px solid #444; padding: 10px; border-radius: 8px; text-align: center; }
+    .gallery-upload-card img { width: 100%; height: 90px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; border: 1px solid #555; }
   </style>
 </head>
 <body>
 
 <div class="container">
   
-  <!-- LOGIN -->
   <div id="loginSection" style="display: block;">
     <h1>Portal do Barbeiro</h1>
     <form onsubmit="realizarLogin(event)">
@@ -62,21 +65,18 @@
     </form>
   </div>
 
-  <!-- PAINEL -->
   <div id="adminPanel">
     <div class="header-actions">
       <h2>⚙️ Painel de Gestão</h2>
       <span class="logout-link" onclick="logout()">Sair</span>
     </div>
 
-    <!-- SELETOR DO BARBEIRO ATIVO -->
     <div class="barber-selector-bar">
       <label for="barbeiroAtivoSelect">Você está gerenciando o perfil de:</label>
       <select id="barbeiroAtivoSelect" onchange="trocarBarbeiroAtivo(this.value)" style="margin-bottom:0;">
       </select>
     </div>
 
-    <!-- Navegação por Abas -->
     <div class="nav-tabs">
       <div class="tab-btn active" onclick="trocarAba('agendaTab', this)">📅 Agenda</div>
       <div class="tab-btn" onclick="trocarAba('diasTab', this)">🗓️ Dias</div>
@@ -86,7 +86,6 @@
       <div class="tab-btn" onclick="trocarAba('siteTab', this)">⚙️ Site</div>
     </div>
 
-    <!-- ABA 1: AGENDA -->
     <div id="agendaTab" class="tab-content">
       <div style="display: flex; gap: 10px; margin-bottom: 15px;">
         <div style="flex: 1;">
@@ -101,7 +100,6 @@
       <div id="listaAgendamentos"></div>
     </div>
 
-    <!-- ABA 2: DIAS ATENDIDOS -->
     <div id="diasTab" class="tab-content" style="display: none;">
       <label>Selecione os dias em que VOCÊ atende:</label>
       <div class="checkbox-grid">
@@ -115,13 +113,11 @@
       </div>
     </div>
 
-    <!-- ABA 3: HORÁRIOS DISPONÍVEIS -->
     <div id="horariosTab" class="tab-content" style="display: none;">
       <label>Selecione os horários que VOCÊ disponibiliza para atendimento:</label>
       <div class="checkbox-grid" id="gridHorariosConfig"></div>
     </div>
 
-    <!-- ABA 4: SERVIÇOS EXCLUSIVOS DO BARBEIRO -->
     <div id="servicosTab" class="tab-content" style="display: none;">
       <div class="admin-card">
         <label>Cadastrar Serviço para este Barbeiro:</label>
@@ -129,31 +125,26 @@
         <input type="number" id="novoServicoPreco" placeholder="Ex: 40.00" step="0.01">
         <button class="btn-add" onclick="adicionarServico()">+ Adicionar Serviço</button>
       </div>
-      
       <label>Catálogo de Serviços deste Profissional:</label>
       <div id="listaServicos"></div>
     </div>
 
-    <!-- ABA 5: EQUIPE & FOTOS -->
     <div id="perfilTab" class="tab-content" style="display: none;">
       <div class="admin-card">
         <label>Cadastrar Novo Barbeiro:</label>
         <input type="text" id="newNome" placeholder="Nome do Barbeiro">
-        
         <div class="file-input-wrapper">
           <label class="custom-file-btn" for="newFotoFile">📷 Selecionar Foto</label>
           <input type="file" id="newFotoFile" accept="image/*" onchange="atualizarNomeArquivo(this)">
           <span id="fileNameDisplay" style="font-size: 0.8rem; color: #888; display: block; margin-top: 5px;">Nenhum arquivo selecionado</span>
         </div>
-
         <button class="btn-add" onclick="adicionarBarbeiro()">+ Cadastrar Barbeiro</button>
       </div>
-
       <label>Barbeiros Cadastrados:</label>
       <div id="adminList"></div>
     </div>
 
-    <!-- ABA 6: CONFIGURAÇÕES DO SITE (ENDEREÇO, WHATSAPP, HORÁRIOS) -->
+    <!-- ABA CONFIGURAÇÕES DO SITE -->
     <div id="siteTab" class="tab-content" style="display: none;">
       <div class="admin-card">
         <label>📱 WhatsApp para Contato (com DDD, apenas números):</label>
@@ -165,19 +156,35 @@
         <label>📍 Endereço Completo:</label>
         <input type="text" id="configEndereco" placeholder="Ex: Rua Santo Antônio, 622 - Praia Grande/SP">
 
-        <label>📸 Foto Galeria 1 (URL da imagem):</label>
-        <input type="text" id="configFoto1" placeholder="https://...">
+        <label style="margin-top: 15px; color: #e0a96d;">📸 Galeria de Fotos (Salva na Nuvem):</label>
+        
+        <div class="gallery-upload-grid">
+          <div class="gallery-upload-card">
+            <img id="previewGaleria1" src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400" alt="Foto 1">
+            <label class="custom-file-btn" for="galeriaFile1">📷 Escolher Foto 1</label>
+            <input type="file" id="galeriaFile1" accept="image/*" onchange="carregarFotoGaleria(this, 1)">
+          </div>
 
-        <label>📸 Foto Galeria 2 (URL da imagem):</label>
-        <input type="text" id="configFoto2" placeholder="https://...">
+          <div class="gallery-upload-card">
+            <img id="previewGaleria2" src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400" alt="Foto 2">
+            <label class="custom-file-btn" for="galeriaFile2">📷 Escolher Foto 2</label>
+            <input type="file" id="galeriaFile2" accept="image/*" onchange="carregarFotoGaleria(this, 2)">
+          </div>
 
-        <label>📸 Foto Galeria 3 (URL da imagem):</label>
-        <input type="text" id="configFoto3" placeholder="https://...">
+          <div class="gallery-upload-card">
+            <img id="previewGaleria3" src="https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=400" alt="Foto 3">
+            <label class="custom-file-btn" for="galeriaFile3">📷 Escolher Foto 3</label>
+            <input type="file" id="galeriaFile3" accept="image/*" onchange="carregarFotoGaleria(this, 3)">
+          </div>
 
-        <label>📸 Foto Galeria 4 (URL da imagem):</label>
-        <input type="text" id="configFoto4" placeholder="https://...">
+          <div class="gallery-upload-card">
+            <img id="previewGaleria4" src="https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400" alt="Foto 4">
+            <label class="custom-file-btn" for="galeriaFile4">📷 Escolher Foto 4</label>
+            <input type="file" id="galeriaFile4" accept="image/*" onchange="carregarFotoGaleria(this, 4)">
+          </div>
+        </div>
 
-        <button class="btn-add" onclick="salvarConfiguracoesSite()">💾 Salvar Dados do Site</button>
+        <button class="btn-add" id="btnSalvarSite" style="margin-top: 20px;" onclick="salvarConfiguracoesSite()">💾 Salvar Dados e Fotos no MongoDB</button>
       </div>
     </div>
 
@@ -190,6 +197,7 @@
   const todosHorariosPadrao = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
 
   let barbeiroAtivoId = 1;
+  let fotosGaleriaMemoria = { foto1: '', foto2: '', foto3: '', foto4: '' };
 
   function getBarbeiros() { return JSON.parse(localStorage.getItem('barbeiros')) || [{ id: 1, nome: 'Carlos Silva', foto: fotoPadrao }]; }
   function getAgendamentos() { return JSON.parse(localStorage.getItem('agendamentos')) || []; }
@@ -455,13 +463,11 @@
         document.getElementById('newNome').value = '';
         fileInput.value = '';
         document.getElementById('fileNameDisplay').innerText = 'Nenhum arquivo selecionado';
-        
         await carregarEAtualizarBarbeirosServidor();
       } else {
         alert(dados.erro || 'Erro ao cadastrar barbeiro.');
       }
     } catch (err) {
-      console.error('Erro ao adicionar barbeiro:', err);
       alert('Erro de conexão com o servidor ao salvar foto.');
     }
   }
@@ -485,8 +491,7 @@
         alert(dados.erro || 'Erro ao atualizar foto.');
       }
     } catch (err) {
-      console.error('Erro ao alterar foto:', err);
-      alert('Erro de comunicação com o servidor ao enviar foto.');
+      alert('Erro de comunicação ao enviar foto.');
     }
   }
 
@@ -511,44 +516,30 @@
 
   async function atualizarBarbeiro(id, nome) {
     if (!nome.trim()) return;
-
     try {
       const resp = await fetch(`${URL_BACKEND}/api/barbeiros/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nome: nome.trim() })
       });
-
       const dados = await resp.json();
-      if (dados.sucesso) {
-        await carregarEAtualizarBarbeirosServidor();
-      } else {
-        alert(dados.erro || 'Erro ao atualizar nome.');
-      }
+      if (dados.sucesso) await carregarEAtualizarBarbeirosServidor();
     } catch (err) {
-      console.error('Erro ao atualizar nome do barbeiro:', err);
-      alert('Erro de comunicação ao atualizar o nome do barbeiro.');
+      alert('Erro ao atualizar nome.');
     }
   }
 
   async function removerBarbeiro(id) {
     if (!confirm('Tem certeza que deseja remover este barbeiro?')) return;
-
     try {
-      const resp = await fetch(`${URL_BACKEND}/api/barbeiros/${id}`, {
-        method: 'DELETE'
-      });
-
+      const resp = await fetch(`${URL_BACKEND}/api/barbeiros/${id}`, { method: 'DELETE' });
       const dados = await resp.json();
       if (dados.sucesso) {
-        alert('Barbeiro removido com sucesso!');
+        alert('Barbeiro removido!');
         await carregarEAtualizarBarbeirosServidor();
-      } else {
-        alert(dados.erro || 'Erro ao remover barbeiro.');
       }
     } catch (err) {
-      console.error('Erro ao remover barbeiro:', err);
-      alert('Erro de conexão ao tentar remover o barbeiro.');
+      alert('Erro ao remover barbeiro.');
     }
   }
 
@@ -572,40 +563,75 @@
     });
   }
 
-  // FUNÇÕES DE GERENCIAMENTO DAS CONFIGURAÇÕES DO SITE
-  function carregarConfiguracoesSite() {
-    const configSite = JSON.parse(localStorage.getItem('configuracoesSite')) || {
-      whats: '5513999999999',
-      horarioTxt: 'TER - SÁB | 08H - 19H',
-      endereco: 'Rua Santo Antônio, 622 - Vila Caiçara - Praia Grande/SP',
-      foto1: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400',
-      foto2: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400',
-      foto3: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=400',
-      foto4: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400'
-    };
-
-    document.getElementById('configWhats').value = configSite.whats || '';
-    document.getElementById('configHorarioTxt').value = configSite.horarioTxt || '';
-    document.getElementById('configEndereco').value = configSite.endereco || '';
-    document.getElementById('configFoto1').value = configSite.foto1 || '';
-    document.getElementById('configFoto2').value = configSite.foto2 || '';
-    document.getElementById('configFoto3').value = configSite.foto3 || '';
-    document.getElementById('configFoto4').value = configSite.foto4 || '';
+  // PROCESSA A FOTO DO DISPOSITIVO
+  async function carregarFotoGaleria(input, num) {
+    if (input.files && input.files[0]) {
+      const base64 = await converterBase64(input.files[0]);
+      fotosGaleriaMemoria[`foto${num}`] = base64;
+      document.getElementById(`previewGaleria${num}`).src = base64;
+    }
   }
 
-  function salvarConfiguracoesSite() {
-    const configSite = {
+  // 🌐 BUSCA E SALVA CONFIGURAÇÕES DO SITE DIRETO NO MONGODB ATLAS
+  async function carregarConfiguracoesSite() {
+    try {
+      const resp = await fetch(`${URL_BACKEND}/api/config-site`);
+      if (resp.ok) {
+        const configSite = await resp.json();
+        document.getElementById('configWhats').value = configSite.whats || '';
+        document.getElementById('configHorarioTxt').value = configSite.horarioTxt || '';
+        document.getElementById('configEndereco').value = configSite.endereco || '';
+
+        fotosGaleriaMemoria.foto1 = configSite.foto1 || '';
+        fotosGaleriaMemoria.foto2 = configSite.foto2 || '';
+        fotosGaleriaMemoria.foto3 = configSite.foto3 || '';
+        fotosGaleriaMemoria.foto4 = configSite.foto4 || '';
+
+        if (configSite.foto1) document.getElementById('previewGaleria1').src = configSite.foto1;
+        if (configSite.foto2) document.getElementById('previewGaleria2').src = configSite.foto2;
+        if (configSite.foto3) document.getElementById('previewGaleria3').src = configSite.foto3;
+        if (configSite.foto4) document.getElementById('previewGaleria4').src = configSite.foto4;
+      }
+    } catch (err) {
+      console.warn("Erro ao buscar configurações no banco:", err);
+    }
+  }
+
+  async function salvarConfiguracoesSite() {
+    const btn = document.getElementById('btnSalvarSite');
+    btn.innerText = 'Salvando na Nuvem...';
+    btn.disabled = true;
+
+    const payload = {
       whats: document.getElementById('configWhats').value.trim(),
       horarioTxt: document.getElementById('configHorarioTxt').value.trim(),
       endereco: document.getElementById('configEndereco').value.trim(),
-      foto1: document.getElementById('configFoto1').value.trim(),
-      foto2: document.getElementById('configFoto2').value.trim(),
-      foto3: document.getElementById('configFoto3').value.trim(),
-      foto4: document.getElementById('configFoto4').value.trim()
+      foto1: fotosGaleriaMemoria.foto1,
+      foto2: fotosGaleriaMemoria.foto2,
+      foto3: fotosGaleriaMemoria.foto3,
+      foto4: fotosGaleriaMemoria.foto4
     };
 
-    localStorage.setItem('configuracoesSite', JSON.stringify(configSite));
-    alert('✅ Configurações do site salvas com sucesso!');
+    try {
+      const resp = await fetch(`${URL_BACKEND}/api/config-site`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const dados = await resp.json();
+      if (dados.sucesso) {
+        alert('✅ Configurações e fotos salvas com sucesso no MongoDB Atlas!');
+      } else {
+        alert('❌ Erro ao salvar configurações no banco.');
+      }
+    } catch (err) {
+      console.error('Erro ao salvar no servidor:', err);
+      alert('❌ Erro de conexão com o servidor.');
+    } finally {
+      btn.innerText = '💾 Salvar Dados e Fotos no MongoDB';
+      btn.disabled = false;
+    }
   }
 
   // AUTENTICAÇÃO
@@ -638,7 +664,6 @@
       }
 
     } catch (erro) {
-      console.error('Erro de conexão:', erro);
       alert('Erro de comunicação com o servidor.');
     } finally {
       if (btnSubmit) {
