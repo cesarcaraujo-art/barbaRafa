@@ -6,8 +6,8 @@ const cors = require('cors');
 const app = express();
 
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ limit: '20mb', extended: true }));
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_123456');
 
@@ -42,15 +42,58 @@ const agendamentoSchema = new mongoose.Schema({
   hora: { type: String, required: true }
 }, { timestamps: true });
 
+const configSiteSchema = new mongoose.Schema({
+  key: { type: String, default: 'geral', unique: true },
+  whats: { type: String, default: '5513999999999' },
+  horarioTxt: { type: String, default: 'TER - SÁB | 08H - 19H' },
+  endereco: { type: String, default: 'Rua Santo Antônio, 622 - Vila Caiçara - Praia Grande/SP' },
+  foto1: { type: String, default: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400' },
+  foto2: { type: String, default: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400' },
+  foto3: { type: String, default: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=400' },
+  foto4: { type: String, default: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400' }
+}, { timestamps: true });
+
 const Barbeiro = mongoose.model('Barbeiro', barbeiroSchema);
 const Agendamento = mongoose.model('Agendamento', agendamentoSchema);
+const ConfigSite = mongoose.model('ConfigSite', configSiteSchema);
 
-// 🚨 ROTA DE EMERGÊNCIA: RESET DE ADMIN (Acesse via navegador se travar)
+// PING
+app.get('/api/ping', (req, res) => {
+  return res.status(200).json({ status: 'OK' });
+});
+
+// GET / PUT CONFIGURAÇÕES DO SITE NO MONGODB
+app.get('/api/config-site', async (req, res) => {
+  try {
+    let config = await ConfigSite.findOne({ key: 'geral' });
+    if (!config) {
+      config = await ConfigSite.create({ key: 'geral' });
+    }
+    return res.status(200).json(config);
+  } catch (err) {
+    return res.status(500).json({ erro: 'Erro ao buscar configurações.' });
+  }
+});
+
+app.put('/api/config-site', async (req, res) => {
+  try {
+    const dados = req.body || {};
+    const config = await ConfigSite.findOneAndUpdate(
+      { key: 'geral' },
+      { $set: dados },
+      { new: true, upsert: true }
+    );
+    return res.status(200).json({ sucesso: true, config });
+  } catch (err) {
+    console.error('Erro ao salvar config site:', err);
+    return res.status(500).json({ sucesso: false, erro: 'Erro ao salvar no banco de dados.' });
+  }
+});
+
+// ROTA DE RESET ADMIN DE EMERGÊNCIA
 app.get('/api/reset-admin', async (req, res) => {
   try {
-    // Remove qualquer admin antigo se existir e cria um limpo
     await Barbeiro.deleteMany({ email: 'admin' });
-    
     const adminNovo = await Barbeiro.create({
       nome: 'Administrador',
       email: 'admin',
@@ -58,47 +101,34 @@ app.get('/api/reset-admin', async (req, res) => {
       foto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
       primeiroAcesso: false
     });
-
-    return res.status(200).json({ 
-      sucesso: true, 
-      mensagem: '✅ Usuário admin resetado com sucesso! Tente logar com admin / 1234',
-      admin: adminNovo 
-    });
+    return res.status(200).json({ sucesso: true, mensagem: 'Admin resetado com sucesso!', admin: adminNovo });
   } catch (err) {
     return res.status(500).json({ erro: err.message });
   }
 });
 
-// PING
-app.get('/api/ping', (req, res) => {
-  return res.status(200).json({ status: 'OK' });
-});
-
-// LISTAR BARBEIROS
+// BARBEIROS
 app.get('/api/barbeiros', async (req, res) => {
   try {
     const barbeiros = await Barbeiro.find({}, 'nome foto email primeiroAcesso');
-    const listaFormatada = barbeiros.map(b => ({
+    return res.status(200).json(barbeiros.map(b => ({
       id: b._id,
       nome: b.nome,
       email: b.email,
       foto: b.foto,
       primeiroAcesso: b.primeiroAcesso
-    }));
-    return res.status(200).json(listaFormatada);
+    })));
   } catch (err) {
     return res.status(500).json({ erro: 'Erro ao buscar barbeiros.' });
   }
 });
 
-// CADASTRAR BARBEIRO
 app.post('/api/barbeiros', async (req, res) => {
   try {
     const { nome, foto } = req.body || {};
     if (!nome) return res.status(400).json({ sucesso: false, erro: 'Informe o nome.' });
 
     const emailGerado = nome.toLowerCase().trim().replace(/\s+/g, '');
-
     const novoBarbeiro = await Barbeiro.create({
       nome: nome.trim(),
       email: emailGerado,
@@ -107,16 +137,12 @@ app.post('/api/barbeiros', async (req, res) => {
       primeiroAcesso: true
     });
 
-    return res.status(200).json({
-      sucesso: true,
-      barbeiro: { id: novoBarbeiro._id, nome: novoBarbeiro.nome, foto: novoBarbeiro.foto }
-    });
+    return res.status(200).json({ sucesso: true, barbeiro: { id: novoBarbeiro._id, nome: novoBarbeiro.nome, foto: novoBarbeiro.foto } });
   } catch (err) {
     return res.status(500).json({ sucesso: false, erro: 'Erro ao salvar barbeiro.' });
   }
 });
 
-// ATUALIZAR BARBEIRO
 app.put('/api/barbeiros/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -132,22 +158,19 @@ app.put('/api/barbeiros/:id', async (req, res) => {
   }
 });
 
-// DELETAR BARBEIRO
 app.delete('/api/barbeiros/:id', async (req, res) => {
   try {
-    const { id } = req.params;
-    await Barbeiro.findByIdAndDelete(id);
+    await Barbeiro.findByIdAndDelete(req.params.id);
     return res.status(200).json({ sucesso: true, mensagem: 'Removido.' });
   } catch (err) {
     return res.status(500).json({ sucesso: false, erro: 'Erro ao remover.' });
   }
 });
 
-// 🚀 ROTA DE LOGIN DEFINITIVA (RESPEITA A SENHA ALTERADA NO BANCO)
+// LOGIN
 app.post('/api/barbeiro/login', async (req, res) => {
   try {
     const body = req.body || {};
-
     const entrada = (body.email || body.usuario || body.login || body.loginUser || body.user || '').toString().trim().toLowerCase();
     const senhaInput = (body.senha || body.loginPass || body.pass || '').toString().trim();
 
@@ -155,14 +178,12 @@ app.post('/api/barbeiro/login', async (req, res) => {
       return res.status(400).json({ sucesso: false, erro: 'Preencha usuário e senha.' });
     }
 
-    // 1. Consulta no MongoDB Atlas validando a entrada e a senha
     const barbeiros = await Barbeiro.find();
     let barbeiro = barbeiros.find(u => 
       (u.email.toLowerCase() === entrada || u.nome.toLowerCase() === entrada) &&
       u.senha === senhaInput
     );
 
-    // 2. Se o admin ainda não foi cadastrado no banco e for a primeira tentativa com 1234
     if (!barbeiro && (entrada === 'admin' || entrada === 'administrador') && senhaInput === '1234') {
       const adminExistente = await Barbeiro.findOne({ email: 'admin' });
       if (!adminExistente) {
@@ -190,38 +211,29 @@ app.post('/api/barbeiro/login', async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('❌ Erro no login:', err);
     return res.status(500).json({ sucesso: false, erro: 'Erro interno no login.' });
   }
 });
 
-// ALTERAR SENHA (ROBUSTA PARA ADMIN E BARBEIROS)
+// ALTERAR SENHA
 app.post('/api/barbeiro/alterar-senha', async (req, res) => {
   try {
     const { idBarbeiro, novaSenha } = req.body || {};
-    
     if (!novaSenha || novaSenha.length < 4) {
-      return res.status(400).json({ sucesso: false, erro: 'A senha deve ter no mínimo 4 caracteres.' });
+      return res.status(400).json({ sucesso: false, erro: 'Mínimo 4 caracteres.' });
     }
 
     let barbeiro = null;
-
-    // 1. Se for um ID válido do MongoDB, busca por ID
     if (idBarbeiro && mongoose.Types.ObjectId.isValid(idBarbeiro)) {
       barbeiro = await Barbeiro.findById(idBarbeiro);
     }
 
-    // 2. Se não encontrou por ID, busca pelo e-mail ou nome do admin
     if (!barbeiro) {
       barbeiro = await Barbeiro.findOne({
-        $or: [
-          { email: 'admin' },
-          { nome: new RegExp('administrador', 'i') }
-        ]
+        $or: [{ email: 'admin' }, { nome: new RegExp('administrador', 'i') }]
       });
     }
 
-    // 3. Se o admin ainda não existia no MongoDB, cria com a nova senha
     if (!barbeiro) {
       barbeiro = new Barbeiro({
         nome: 'Administrador',
@@ -236,15 +248,9 @@ app.post('/api/barbeiro/alterar-senha', async (req, res) => {
     }
 
     await barbeiro.save();
-    console.log(`✅ Senha alterada com sucesso no MongoDB para o usuário: ${barbeiro.email}`);
-
-    return res.status(200).json({ 
-      sucesso: true, 
-      mensagem: 'Senha alterada com sucesso!' 
-    });
+    return res.status(200).json({ sucesso: true, mensagem: 'Senha alterada com sucesso!' });
   } catch (err) {
-    console.error('❌ Erro ao alterar senha:', err);
-    return res.status(500).json({ sucesso: false, erro: 'Erro interno ao alterar senha.' });
+    return res.status(500).json({ sucesso: false, erro: 'Erro ao alterar senha.' });
   }
 });
 
