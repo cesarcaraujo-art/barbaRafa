@@ -338,6 +338,16 @@
       const card = document.createElement('div');
       card.className = 'agenda-card';
       const dataFormatada = a.data.split('-').reverse().join('/');
+
+      let whatsNum = (a.whats || '').replace(/\D/g, '');
+      if (whatsNum && !whatsNum.startsWith('55') && whatsNum.length <= 11) {
+        whatsNum = '55' + whatsNum;
+      }
+
+      const linkWhats = whatsNum 
+        ? `<a href="https://api.whatsapp.com/send?phone=${whatsNum}&text=Ol%C3%A1%20${encodeURIComponent(a.cliente)}%2C%20tudo%20bem%3F%20Falo%20da%20Barbearia%20Rafael." target="_blank" style="color: #25d366; font-weight: bold; text-decoration: none;">💬 Falar no WhatsApp (${a.whats})</a>`
+        : '<span style="color:#888;">Não informado</span>';
+
       card.innerHTML = `
         <button class="btn-delete-x" onclick="excluirAgendamento('${a.id || a._id}')" title="Excluir Agendamento">✖</button>
         <div class="agenda-header">
@@ -346,7 +356,7 @@
         </div>
         <div><b>Cliente:</b> ${a.cliente}</div>
         <div><b>Serviço:</b> ${a.servico}</div>
-        <div style="font-size:0.85rem; color:#aaa; margin-top:5px;">📱 Whats: ${a.whats || 'Não informado'}</div>
+        <div style="font-size:0.9rem; margin-top:8px;">📱 Whats: ${linkWhats}</div>
       `;
       container.appendChild(card);
     });
