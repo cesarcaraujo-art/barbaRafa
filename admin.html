@@ -84,6 +84,7 @@
       <div class="tab-btn" onclick="trocarAba('servicosTab', this)">✂️ Serviços</div>
       <div class="tab-btn" onclick="trocarAba('perfilTab', this)">👤 Equipe</div>
       <div class="tab-btn" onclick="trocarAba('siteTab', this)">⚙️ Site</div>
+      <div class="tab-btn" onclick="trocarAba('senhaTab', this)">🔑 Senha</div>
     </div>
 
     <div id="agendaTab" class="tab-content">
@@ -144,7 +145,6 @@
       <div id="adminList"></div>
     </div>
 
-    <!-- ABA CONFIGURAÇÕES DO SITE -->
     <div id="siteTab" class="tab-content" style="display: none;">
       <div class="admin-card">
         <label>📱 WhatsApp para Contato (com DDD, apenas números):</label>
@@ -188,6 +188,15 @@
       </div>
     </div>
 
+    <!-- ABA ALTERAR SENHA -->
+    <div id="senhaTab" class="tab-content" style="display: none;">
+      <div class="admin-card">
+        <label>🔒 Nova Senha do Administrador:</label>
+        <input type="password" id="novaSenhaInput" placeholder="Mínimo 4 caracteres">
+        <button class="btn-add" onclick="salvarNovaSenha()">🔑 Atualizar Senha de Acesso</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -219,7 +228,7 @@
   }
 
   function carregarSeletorBarbeiros() {
-    const list = getBarbeiros();
+    const list = getBarbeiros().filter(b => b.email !== 'admin');
     const select = document.getElementById('barbeiroAtivoSelect');
     select.innerHTML = '';
     
@@ -250,7 +259,9 @@
   }
 
   function renderizarAbaAtual() {
-    const abaAtiva = document.querySelector('.tab-btn.active').getAttribute('onclick');
+    const btnAtivo = document.querySelector('.tab-btn.active');
+    if (!btnAtivo) return;
+    const abaAtiva = btnAtivo.getAttribute('onclick');
     if (abaAtiva.includes('agendaTab')) renderizarAgenda();
     if (abaAtiva.includes('diasTab')) carregarDiasAtendimento();
     if (abaAtiva.includes('horariosTab')) renderizarHorariosConfig();
@@ -500,11 +511,13 @@
       const resp = await fetch(`${URL_BACKEND}/api/barbeiros`);
       if (resp.ok) {
         const barbeiros = await resp.json();
-        const listaNormalizada = barbeiros.map(b => ({
-          id: b.id || b._id,
-          nome: b.nome,
-          foto: b.foto
-        }));
+        const listaNormalizada = barbeiros
+          .filter(b => b.email !== 'admin')
+          .map(b => ({
+            id: b.id || b._id,
+            nome: b.nome,
+            foto: b.foto
+          }));
         saveItem('barbeiros', listaNormalizada);
         carregarSeletorBarbeiros();
         renderizarBarbeiros();
@@ -544,7 +557,7 @@
   }
 
   function renderizarBarbeiros() {
-    const list = getBarbeiros();
+    const list = getBarbeiros().filter(b => b.email !== 'admin');
     const container = document.getElementById('adminList');
     container.innerHTML = '';
     
@@ -563,7 +576,6 @@
     });
   }
 
-  // PROCESSA A FOTO DO DISPOSITIVO
   async function carregarFotoGaleria(input, num) {
     if (input.files && input.files[0]) {
       const base64 = await converterBase64(input.files[0]);
@@ -572,7 +584,6 @@
     }
   }
 
-  // 🌐 BUSCA E SALVA CONFIGURAÇÕES DO SITE DIRETO NO MONGODB ATLAS
   async function carregarConfiguracoesSite() {
     try {
       const resp = await fetch(`${URL_BACKEND}/api/config-site`);
@@ -626,11 +637,41 @@
         alert('❌ Erro ao salvar configurações no banco.');
       }
     } catch (err) {
-      console.error('Erro ao salvar no servidor:', err);
       alert('❌ Erro de conexão com o servidor.');
     } finally {
       btn.innerText = '💾 Salvar Dados e Fotos no MongoDB';
       btn.disabled = false;
+    }
+  }
+
+  // ALTERAÇÃO DE SENHA DO PAINEL
+  async function salvarNovaSenha() {
+    const novaSenha = document.getElementById('novaSenhaInput').value;
+    if (!novaSenha || novaSenha.length < 4) {
+      return alert('A senha deve ter no mínimo 4 caracteres.');
+    }
+
+    const barbeiroLogado = JSON.parse(sessionStorage.getItem('barbeiroLogado')) || {};
+
+    try {
+      const resp = await fetch(`${URL_BACKEND}/api/barbeiro/alterar-senha`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idBarbeiro: barbeiroLogado.id,
+          novaSenha: novaSenha.trim()
+        })
+      });
+
+      const dados = await resp.json();
+      if (dados.sucesso) {
+        alert('🔑 Senha alterada com sucesso!');
+        document.getElementById('novaSenhaInput').value = '';
+      } else {
+        alert(dados.erro || 'Erro ao alterar senha.');
+      }
+    } catch (err) {
+      alert('Erro de comunicação com o servidor ao alterar senha.');
     }
   }
 
