@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <!-- DESATIVADOR DE CACHE DO NAVEGADOR E CELULARES -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
@@ -20,7 +19,6 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     html { scroll-behavior: smooth; }
     
-    /* IMPEDE A SELEÇÃO DE TEXTO E ARRASTE DE IMAGENS */
     body {
       background-color: #121212;
       color: #f5f5f5;
@@ -364,7 +362,19 @@
     }
 
     const configHorarios = JSON.parse(localStorage.getItem('horariosPorBarbeiro')) || {};
-    const horariosBarbeiro = configHorarios[barbeiroId] || todosHorariosPadrao;
+    const horariosDoBarbeiro = configHorarios[barbeiroId] || {};
+    let horariosDia = [];
+
+    if (Array.isArray(horariosDoBarbeiro)) {
+      horariosDia = horariosDoBarbeiro;
+    } else {
+      horariosDia = horariosDoBarbeiro[diaSemana] || todosHorariosPadrao;
+    }
+
+    if (!horariosDia || horariosDia.length === 0) {
+      grid.innerHTML = `<span style="color: #ff5252; grid-column: 1 / -1; font-weight: bold;">⚠️ Nenhum horário disponível para este dia.</span>`;
+      return;
+    }
 
     let ocupadosServer = [];
     try {
@@ -377,7 +387,7 @@
     }
 
     grid.innerHTML = '';
-    horariosBarbeiro.forEach(h => {
+    horariosDia.forEach(h => {
       const btn = document.createElement('button');
       btn.className = 'slot-btn';
       
