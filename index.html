@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
+  <!-- DESATIVADOR DE CACHE DO NAVEGADOR E CELULARES -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
@@ -19,6 +20,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     html { scroll-behavior: smooth; }
     
+    /* IMPEDE A SELEÇÃO DE TEXTO E ARRASTE DE IMAGENS */
     body {
       background-color: #121212;
       color: #f5f5f5;
@@ -160,6 +162,7 @@
       <h2>4. Seus Dados</h2>
       <input type="text" id="nomeCliente" placeholder="Seu Nome Completo">
       <input type="email" id="emailCliente" placeholder="Seu E-mail para Confirmação">
+      <input type="text" id="whatsCliente" placeholder="Seu WhatsApp (Ex: 13999999999)">
       
       <button class="submit-btn hover-scale" onclick="confirmarAgendamento()">Confirmar Agendamento</button>
     </div>
@@ -399,12 +402,14 @@
     const data = document.getElementById('dataSelect').value;
     const nome = document.getElementById('nomeCliente').value;
     const email = document.getElementById('emailCliente').value;
+    const whats = document.getElementById('whatsCliente').value;
 
-    if (!barbeiroSelecionadoObj || !servicoValue || !data || !horarioSelecionado || !nome || !email) {
-      alert('Por favor, preencha todos os campos!');
+    if (!barbeiroSelecionadoObj || !servicoValue || !data || !horarioSelecionado || !nome || !email || !whats) {
+      alert('Por favor, preencha todos os campos, incluindo o seu WhatsApp!');
       return;
     }
 
+    const whatsLimpo = whats.replace(/\D/g, '');
     const [servicoNome, servicoPreco] = servicoValue.split('|');
     const dataFormatada = data.split('-').reverse().join('/');
     const box = document.getElementById('confirmationBox');
@@ -412,6 +417,7 @@
     document.getElementById('detailsText').innerHTML = `
       <b>Cliente:</b> ${nome}<br>
       <b>E-mail:</b> ${email}<br>
+      <b>WhatsApp:</b> ${whatsLimpo}<br>
       <b>Barbeiro:</b> ${barbeiroSelecionadoObj.nome}<br>
       <b>Serviço:</b> ${servicoNome} (R$ ${parseFloat(servicoPreco).toFixed(2).replace('.', ',')})<br>
       <b>Data/Hora:</b> ${dataFormatada} às ${horarioSelecionado}hs
@@ -437,6 +443,7 @@
       body: JSON.stringify({
         nome,
         email,
+        whats: whatsLimpo,
         barbeiro: barbeiroSelecionadoObj.nome,
         servico: servicoNome,
         preco: servicoPreco,
