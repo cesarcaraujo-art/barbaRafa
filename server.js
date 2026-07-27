@@ -202,7 +202,7 @@ app.post('/api/barbeiro/login', async (req, res) => {
   }
 });
 
-// ROTA DEDICADA PARA ALTERAÇÃO DE SENHA
+// ALTERAÇÃO DE SENHA
 app.post('/api/barbeiro/alterar-senha', async (req, res) => {
   try {
     const { idBarbeiro, novaSenha } = req.body || {};
