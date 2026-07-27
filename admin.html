@@ -213,7 +213,6 @@
   let fotosGaleriaMemoria = { foto1: '', foto2: '', foto3: '', foto4: '' };
 
   function getBarbeiros() { return JSON.parse(localStorage.getItem('barbeiros')) || [{ id: 1, nome: 'Carlos Silva', foto: fotoPadrao }]; }
-  function getAgendamentos() { return JSON.parse(localStorage.getItem('agendamentos')) || []; }
   function saveItem(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
 
   async function carregarTudoDoBanco() {
@@ -289,11 +288,23 @@
     if (abaAtiva.includes('siteTab')) carregarConfiguracoesSite();
   }
 
-  function renderizarAgenda() {
-    const agendamentos = getAgendamentos();
+  async function renderizarAgenda() {
+    const container = document.getElementById('listaAgendamentos');
+    container.innerHTML = '<p style="color:#888; text-align:center; padding: 20px;">Carregando agendamentos...</p>';
+
+    let agendamentos = [];
+
+    try {
+      const resp = await fetch(`${URL_BACKEND}/api/agendamentos?nocache=${Date.now()}`);
+      if (resp.ok) {
+        agendamentos = await resp.json();
+      }
+    } catch (e) {
+      console.warn("Erro ao buscar agendamentos na nuvem:", e);
+    }
+
     const barbeiros = getBarbeiros();
     const barbeiroAtual = barbeiros.find(b => (b.id || b._id) === barbeiroAtivoId);
-    const container = document.getElementById('listaAgendamentos');
     container.innerHTML = '';
 
     const filtro = document.getElementById('filtroAgenda').value;
@@ -328,7 +339,7 @@
       card.className = 'agenda-card';
       const dataFormatada = a.data.split('-').reverse().join('/');
       card.innerHTML = `
-        <button class="btn-delete-x" onclick="excluirAgendamento('${a.id}')" title="Excluir Agendamento">✖</button>
+        <button class="btn-delete-x" onclick="excluirAgendamento('${a.id || a._id}')" title="Excluir Agendamento">✖</button>
         <div class="agenda-header">
           <span>🕒 ${a.hora} hs — ${dataFormatada}</span>
           <span>💈 ${a.barbeiro}</span>
@@ -341,10 +352,14 @@
     });
   }
 
-  function excluirAgendamento(id) {
+  async function excluirAgendamento(id) {
     if (confirm('Deseja excluir este agendamento?')) {
-      saveItem('agendamentos', getAgendamentos().filter(a => a.id !== id));
-      renderizarAgenda();
+      try {
+        await fetch(`${URL_BACKEND}/api/agendamentos/${id}`, { method: 'DELETE' });
+        await renderizarAgenda();
+      } catch (err) {
+        alert('Erro ao excluir agendamento.');
+      }
     }
   }
 
