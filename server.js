@@ -51,7 +51,6 @@ const configSiteSchema = new mongoose.Schema({
   foto2: { type: String, default: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400' },
   foto3: { type: String, default: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=400' },
   foto4: { type: String, default: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400' },
-  // Configurações por barbeiro armazenadas no MongoDB
   diasPorBarbeiro: { type: Object, default: {} },
   horariosPorBarbeiro: { type: Object, default: {} },
   servicosPorBarbeiro: { type: Object, default: {} }
@@ -66,7 +65,7 @@ app.get('/api/ping', (req, res) => {
   return res.status(200).json({ status: 'OK' });
 });
 
-// CONFIGURAÇÕES DO SITE NO MONGODB
+// CONFIGURAÇÕES DO SITE
 app.get('/api/config-site', async (req, res) => {
   try {
     let config = await ConfigSite.findOne({ key: 'geral' });
