@@ -79,22 +79,22 @@ app.get('/api/ping', (req, res) => {
   return res.status(200).json({ status: 'OK', mensagem: 'Servidor e Banco de Dados ativos' });
 });
 
-// Listar todos os barbeiros (Público)
+// ROTA GET: Busca os barbeiros cadastrados no MongoDB
 app.get('/api/barbeiros', async (req, res) => {
   try {
-    const barbeiros = await Barbeiro.find({}, 'nome foto email primeiroAcesso');
-    // Mapeia o _id do Mongo para o id esperado no frontend
+    const barbeiros = await Barbeiro.find({});
+    
+    // Converte os documentos do Mongo para o formato que a tela espera (_id do Mongo como id)
     const listaFormatada = barbeiros.map(b => ({
       id: b._id,
       nome: b.nome,
-      email: b.email,
-      foto: b.foto || 'https://barbeariarafa.netlify.app/img/rafael.jpg',
-      primeiroAcesso: b.primeiroAcesso
+      foto: b.foto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
     }));
+
     return res.status(200).json(listaFormatada);
   } catch (err) {
     console.error('❌ Erro ao buscar barbeiros:', err);
-    return res.status(500).json({ erro: 'Erro ao buscar barbeiros no banco.' });
+    return res.status(500).json({ sucesso: false, erro: 'Erro ao buscar barbeiros do banco.' });
   }
 });
 
