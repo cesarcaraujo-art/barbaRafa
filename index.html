@@ -3,94 +3,208 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- META TAGS DE COMPARTILHAMENTO (OPEN GRAPH / WHATSAPP) -->
+  <meta property="og:title" content="Barbearia Rafael - Agendamento Online">
+  <meta property="og:description" content="Agende seu horário com rapidez e facilidade em um ambiente climatizado e exclusivo.">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800">
+  <meta property="og:type" content="website">
+
   <title>Agendamento - Barbearia Rafael</title>
+  
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background-color: #121212; color: #f5f5f5; padding: 20px; display: flex; justify-content: center; }
-    .container { max-width: 600px; width: 100%; background: #1e1e1e; padding: 25px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
-    h1, h2 { text-align: center; margin-bottom: 20px; color: #e0a96d; }
-    .step { margin-bottom: 25px; }
+    html { scroll-behavior: smooth; }
+    body { background-color: #121212; color: #f5f5f5; padding-top: 70px; }
+
+    /* ANIMAÇÕES CSS */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in { animation: fadeIn 0.8s ease forwards; }
+    .hover-scale { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .hover-scale:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(224, 169, 109, 0.2); }
+
+    /* HEADER & NAVBAR */
+    header.navbar {
+      position: fixed; top: 0; left: 0; width: 100%; height: 70px;
+      background: #181818; border-bottom: 1px solid #333; z-index: 1000;
+      display: flex; justify-content: space-between; align-items: center; padding: 0 25px;
+    }
+    .navbar-brand { font-size: 1.3rem; font-weight: bold; color: #e0a96d; text-decoration: none; }
+    .nav-links { display: flex; gap: 20px; list-style: none; }
+    .nav-links a { color: #ccc; text-decoration: none; font-size: 0.95rem; font-weight: 500; transition: 0.2s; }
+    .nav-links a:hover { color: #e0a96d; }
+
+    /* CONTAINER PRINCIPAL */
+    .container { max-width: 900px; width: 90%; margin: 30px auto; background: #1e1e1e; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+    h1, h2, h3 { text-align: center; margin-bottom: 20px; color: #e0a96d; }
+    
+    /* SEÇÃO HERO BANNER */
+    .hero-section { text-align: center; padding: 30px 10px; border-bottom: 1px solid #333; margin-bottom: 30px; }
+    .schedule-badge { display: inline-block; background: #2a2a2a; color: #e0a96d; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; margin-bottom: 15px; border: 1px solid #444; }
+    .hero-title { font-size: 2.2rem; color: #f5f5f5; margin-bottom: 10px; }
+    .hero-subtitle { color: #aaa; font-size: 1rem; margin-bottom: 20px; }
+
+    /* PASSOS DO AGENDAMENTO */
+    .step { margin-bottom: 30px; background: #252525; padding: 20px; border-radius: 10px; border: 1px solid #333; }
     label { display: block; margin-bottom: 8px; font-weight: bold; color: #ccc; }
-    
     select, input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #444; background: #2a2a2a; color: #fff; margin-bottom: 15px; font-size: 1rem; }
-    
+
+    /* CARDS DE BARBEIROS */
     .barbeiros-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; margin-top: 10px; }
     .barbeiro-card { background: #2a2a2a; border: 2px solid #333; border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; transition: 0.3s; }
     .barbeiro-card:hover, .barbeiro-card.selected { border-color: #e0a96d; background: #33281e; }
-    .barbeiro-card img { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; border: 2px solid #e0a96d; }
-    
-    .slots-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .slot-btn { padding: 10px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+    .barbeiro-card img { width: 75px; height: 75px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; border: 2px solid #e0a96d; }
+
+    /* GRADE DE HORÁRIOS */
+    .slots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; }
+    .slot-btn { padding: 10px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 6px; cursor: pointer; transition: 0.2s; font-size: 0.9rem; }
     .slot-btn:hover:not(:disabled), .slot-btn.selected { background: #e0a96d; color: #121212; font-weight: bold; }
-    
-    /* Estilo para botão de horário bloqueado/ocupado */
-    .slot-btn:disabled, .slot-btn.ocupado {
-      background: #181818 !important;
-      border-color: #333 !important;
-      color: #666 !important;
-      cursor: not-allowed !important;
-      opacity: 0.5;
-    }
-    
+    .slot-btn:disabled, .slot-btn.ocupado { background: #181818 !important; border-color: #333 !important; color: #666 !important; cursor: not-allowed !important; opacity: 0.5; }
+
+    /* BOTÃO PRINCIPAL */
     button.submit-btn { width: 100%; padding: 15px; background: #e0a96d; color: #121212; border: none; font-size: 1.1rem; font-weight: bold; border-radius: 6px; cursor: pointer; }
     button.submit-btn:hover { background: #c89355; }
-    
+
+    /* CAIXA DE CONFIRMAÇÃO */
     .confirmation-box { display: none; background: #1b382b; border: 1px solid #2e7d32; padding: 20px; border-radius: 8px; margin-top: 20px; }
     .action-btn { display: block; width: 100%; padding: 12px; border-radius: 6px; text-align: center; font-weight: bold; text-decoration: none; margin-top: 10px; font-size: 0.95rem; }
     .calendar-action { background: #4285f4; color: #fff; }
     .calendar-action:hover { background: #3367d6; }
+
+    /* LOCALIZAÇÃO & GALERIA */
+    .section-standard { margin-top: 40px; padding-top: 20px; border-top: 1px solid #333; }
+    .map-wrapper { width: 100%; max-width: 100%; height: 300px; border-radius: 10px; overflow: hidden; margin-top: 15px; border: 1px solid #444; }
+    
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-top: 15px; }
+    .gallery-item img { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #333; }
+
+    /* BOTÃO FLUTUANTE DO WHATSAPP */
+    .whatsapp-float {
+      position: fixed; bottom: 20px; right: 20px;
+      background: #25d366; color: #fff;
+      width: 55px; height: 55px; border-radius: 50%;
+      display: flex; justify-content: center; align-items: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 9999;
+      text-decoration: none; font-size: 28px;
+    }
+
+    /* RODAPÉ */
+    footer { text-align: center; margin-top: 40px; padding: 20px 0; color: #888; font-size: 0.85rem; border-top: 1px solid #222; }
+
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      body { padding-top: 60px; }
+      .container { width: 95%; padding: 15px; }
+    }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <h1>Barbearia Rafael</h1>
+<!-- BARRA DE NAVEGAÇÃO -->
+<header class="navbar">
+  <a href="#home" class="navbar-brand">💈 Barbearia Rafael</a>
+  <ul class="nav-links">
+    <li><a href="#home">Home</a></li>
+    <li><a href="#agendar">Agendar</a></li>
+    <li><a href="#local">Localização</a></li>
+    <li><a href="#galeria">Galeria</a></li>
+  </ul>
+</header>
 
-  <!-- Passo 1: Barbeiro -->
-  <div class="step">
-    <h2>1. Escolha seu Barbeiro</h2>
-    <div class="barbeiros-grid" id="barbeirosGrid"></div>
-  </div>
+<div class="container animate-fade-in" id="home">
+  
+  <!-- HERO BANNER -->
+  <section class="hero-section">
+    <div class="schedule-badge">TER - SÁB | 08H - 19H</div>
+    <h1 class="hero-title">Barbearia Rafael</h1>
+    <p class="hero-subtitle">Barbearia Familiar com Ambiente Climatizado & Atendimento Exclusivo</p>
+  </section>
 
-  <!-- Passo 2: Serviço -->
-  <div class="step">
-    <h2>2. Escolha o Serviço</h2>
-    <select id="servicoSelect">
-      <option value="">Primeiro escolha o barbeiro acima...</option>
-    </select>
-  </div>
-
-  <!-- Passo 3: Data e Horário -->
-  <div class="step">
-    <h2>3. Data e Horário</h2>
-    <label for="dataSelect">Selecione a data:</label>
-    <input type="date" id="dataSelect" onchange="validarDataSelecionada()">
+  <!-- AGENDAMENTO -->
+  <div id="agendar">
     
-    <label>Horários Disponíveis:</label>
-    <div class="slots-grid" id="slotsGrid">
-      <span style="color: #888; grid-column: span 3;">Selecione um barbeiro e a data acima...</span>
+    <!-- Passo 1: Barbeiro -->
+    <div class="step hover-scale">
+      <h2>1. Escolha seu Barbeiro</h2>
+      <div class="barbeiros-grid" id="barbeirosGrid"></div>
     </div>
+
+    <!-- Passo 2: Serviço -->
+    <div class="step hover-scale">
+      <h2>2. Escolha o Serviço</h2>
+      <select id="servicoSelect">
+        <option value="">Primeiro escolha o barbeiro acima...</option>
+      </select>
+    </div>
+
+    <!-- Passo 3: Data e Horário -->
+    <div class="step hover-scale">
+      <h2>3. Data e Horário</h2>
+      <label for="dataSelect">Selecione a data:</label>
+      <input type="date" id="dataSelect" onchange="validarDataSelecionada()">
+      
+      <label>Horários Disponíveis:</label>
+      <div class="slots-grid" id="slotsGrid">
+        <span style="color: #888; grid-column: 1 / -1;">Selecione um barbeiro e a data acima...</span>
+      </div>
+    </div>
+
+    <!-- Passo 4: Seus Dados -->
+    <div class="step hover-scale">
+      <h2>4. Seus Dados</h2>
+      <input type="text" id="nomeCliente" placeholder="Seu Nome Completo">
+      <input type="email" id="emailCliente" placeholder="Seu E-mail para Confirmação">
+      
+      <button class="submit-btn hover-scale" onclick="confirmarAgendamento()">Confirmar Agendamento</button>
+    </div>
+
+    <!-- CAIXA DE CONFIRMAÇÃO -->
+    <div class="confirmation-box" id="confirmationBox">
+      <h3 style="color: #81c784;">✅ Agendamento Confirmado!</h3>
+      <p id="detailsText" style="margin-top: 10px; margin-bottom: 15px; line-height: 1.5;"></p>
+      <p style="font-size: 0.85rem; color: #a5d6a7; margin-bottom: 10px;">
+        📧 Um e-mail com a confirmação e detalhes foi enviado para a sua caixa de entrada.
+      </p>
+      
+      <a id="calendarLink" href="#" target="_blank" class="action-btn calendar-action hover-scale">📅 Adicionar à Google Agenda</a>
+    </div>
+
   </div>
 
-  <!-- Passo 4: Seus Dados -->
-  <div class="step">
-    <h2>4. Seus Dados</h2>
-    <input type="text" id="nomeCliente" placeholder="Seu Nome Completo">
-    <input type="email" id="emailCliente" placeholder="Seu E-mail para Confirmação">
-    
-    <button class="submit-btn" onclick="confirmarAgendamento()">Confirmar Agendamento</button>
-  </div>
+  <!-- SEÇÃO DE LOCALIZAÇÃO -->
+  <section class="section-standard" id="local">
+    <h2>📍 Nossa Localização</h2>
+    <p style="text-align: center; color: #aaa; margin-bottom: 10px;">Venha nos visitar e renovar o seu visual!</p>
+    <div class="map-wrapper">
+      <iframe title="Mapa da Barbearia" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3643.6083656212177!2d-46.5242573!3d-24.0448719!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce21aa1e89ab39%3A0x37b1c0ae3a88122e!2sBarbearia!5e0!3m2!1spt-BR!2sbr!4v1743010781249!5m2!1spt-BR!2sbr" width="100%" height="100%" style="border:0;" loading="lazy"></iframe>
+    </div>
+  </section>
 
-  <div class="confirmation-box" id="confirmationBox">
-    <h3 style="color: #81c784;">✅ Agendamento Confirmado!</h3>
-    <p id="detailsText" style="margin-top: 10px; margin-bottom: 15px; line-height: 1.5;"></p>
-    <p style="font-size: 0.85rem; color: #a5d6a7; margin-bottom: 10px;">
-      📧 Um e-mail com a confirmação e detalhes foi enviado para a sua caixa de entrada.
-    </p>
-    
-    <a id="calendarLink" href="#" target="_blank" class="action-btn calendar-action">📅 Adicionar à Google Agenda</a>
-  </div>
+  <!-- GALERIA DE FOTOS -->
+  <section class="section-standard" id="galeria">
+    <h2>📸 Galeria do Espaço</h2>
+    <div class="gallery-grid">
+      <div class="gallery-item hover-scale"><img src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400" alt="Ambiente da Barbearia"></div>
+      <div class="gallery-item hover-scale"><img src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400" alt="Corte Profissional"></div>
+      <div class="gallery-item hover-scale"><img src="https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=400" alt="Cadeira de Barbeiro"></div>
+      <div class="gallery-item hover-scale"><img src="https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400" alt="Serviço de Barba"></div>
+    </div>
+  </section>
+
+  <!-- RODAPÉ -->
+  <footer>
+    <p>© 2026 <strong>Barbearia Rafael</strong>. Todos os direitos reservados.</p>
+  </footer>
+
 </div>
+
+<!-- BOTÃO FLUTUANTE DO WHATSAPP -->
+<a href="https://api.whatsapp.com/send/?phone=5513999999999&text=Ol%C3%A1%2C+gostaria+de+tirar+uma+d%C3%BAvida+sobre+o+agendamento%21" target="_blank" class="whatsapp-float hover-scale" aria-label="Abrir WhatsApp">
+  💬
+</a>
 
 <script>
   const URL_BACKEND = 'https://barbarafa.onrender.com';
@@ -138,7 +252,7 @@
   // 🚀 BUSCA OS BARBEIROS DIRETAMENTE DO BACKEND NO RENDER E USA LOCALSTORAGE COMO FALLBACK
   async function carregarBarbeiros() {
     const grid = document.getElementById('barbeirosGrid');
-    grid.innerHTML = '<span style="color: #888; grid-column: span 3;">Carregando barbeiros...</span>';
+    grid.innerHTML = '<span style="color: #888; grid-column: 1 / -1;">Carregando barbeiros...</span>';
 
     let barbeiros = [];
 
@@ -160,12 +274,12 @@
 
     barbeiros.forEach(b => {
       const card = document.createElement('div');
-      card.className = 'barbeiro-card';
+      card.className = 'barbeiro-card hover-scale';
       card.onclick = () => {
         document.querySelectorAll('.barbeiro-card').forEach(c => c.classList.remove('selected'));
         card.classList.add('selected');
         barbeiroSelecionadoObj = b;
-        carregarServicosDoBarbeiro(b.id);
+        carregarServicosDoBarbeiro(b.id || b._id);
         gerarHorarios();
       };
       card.innerHTML = `
@@ -204,7 +318,7 @@
     const dataVal = document.getElementById('dataSelect').value;
 
     if (!dataVal || !barbeiroSelecionadoObj) {
-      grid.innerHTML = '<span style="color: #888; grid-column: span 3;">Selecione barbeiro e data acima...</span>';
+      grid.innerHTML = '<span style="color: #888; grid-column: 1 / -1;">Selecione barbeiro e data acima...</span>';
       return;
     }
 
@@ -214,16 +328,17 @@
     const diaSemana = dataObj.getDay();
 
     const configDias = JSON.parse(localStorage.getItem('diasAtendimentoPorBarbeiro')) || {};
-    const diasPermitidos = configDias[barbeiroSelecionadoObj.id] || [1, 2, 3, 4, 5, 6];
+    const barbeiroId = barbeiroSelecionadoObj.id || barbeiroSelecionadoObj._id;
+    const diasPermitidos = configDias[barbeiroId] || [1, 2, 3, 4, 5, 6];
 
     if (!diasPermitidos.includes(diaSemana)) {
-      grid.innerHTML = `<span style="color: #ff5252; grid-column: span 3; font-weight: bold;">⚠️ ${barbeiroSelecionadoObj.nome} não atende neste dia.</span>`;
+      grid.innerHTML = `<span style="color: #ff5252; grid-column: 1 / -1; font-weight: bold;">⚠️ ${barbeiroSelecionadoObj.nome} não atende neste dia.</span>`;
       return;
     }
 
     // 2. Horários Liberados pelo Barbeiro
     const configHorarios = JSON.parse(localStorage.getItem('horariosPorBarbeiro')) || {};
-    const horariosBarbeiro = configHorarios[barbeiroSelecionadoObj.id] || todosHorariosPadrao;
+    const horariosBarbeiro = configHorarios[barbeiroId] || todosHorariosPadrao;
 
     // 3. Obter Horários Ocupados no LocalStorage
     const agendamentosLocal = JSON.parse(localStorage.getItem('agendamentos')) || [];
