@@ -90,24 +90,7 @@ app.put('/api/config-site', async (req, res) => {
   }
 });
 
-// 🚨 ROTA DE RESET MANUAL DE EMERGÊNCIA (USAR APENAS SE PERDER A SENHA E QUISER VOLTAR PRA 1234)
-app.get('/api/reset-admin', async (req, res) => {
-  try {
-    await Barbeiro.deleteMany({ email: 'admin' });
-    const adminNovo = await Barbeiro.create({
-      nome: 'Administrador',
-      email: 'admin',
-      senha: '1234',
-      foto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      primeiroAcesso: false
-    });
-    return res.status(200).json({ sucesso: true, mensagem: 'Admin resetado manualmente para 1234!', admin: adminNovo });
-  } catch (err) {
-    return res.status(500).json({ erro: err.message });
-  }
-});
-
-// LISTAR BARBEIROS (NÃO DELETA NEM SOBRESCREVE NADA)
+// LISTAR BARBEIROS
 app.get('/api/barbeiros', async (req, res) => {
   try {
     const barbeiros = await Barbeiro.find({}, 'nome foto email primeiroAcesso');
@@ -167,7 +150,7 @@ app.delete('/api/barbeiros/:id', async (req, res) => {
   }
 });
 
-// 🔒 LOGIN 100% PERSISTENTE NO MONGODB
+// 🔓 ROTA DE LOGIN COM RECUPERAÇÃO DE ACESSO
 app.post('/api/barbeiro/login', async (req, res) => {
   try {
     const body = req.body || {};
@@ -178,11 +161,29 @@ app.post('/api/barbeiro/login', async (req, res) => {
       return res.status(400).json({ sucesso: false, erro: 'Preencha usuário e senha.' });
     }
 
-    // Busca o usuário exatamente com o login e senha digitados
-    const barbeiro = await Barbeiro.findOne({
+    // 1. Tenta encontrar o barbeiro cadastrado no banco
+    let barbeiro = await Barbeiro.findOne({
       $or: [{ email: entrada }, { nome: new RegExp(`^${entrada}$`, 'i') }],
       senha: senhaInput
     });
+
+    // 2. Se for admin e não encontrou (ou o banco foi limpo), recria/recupera para garantir o seu acesso
+    if (!barbeiro && (entrada === 'admin' || entrada === 'administrador')) {
+      let adminExistente = await Barbeiro.findOne({ email: 'admin' });
+
+      if (!adminExistente) {
+        adminExistente = await Barbeiro.create({
+          nome: 'Administrador',
+          email: 'admin',
+          senha: senhaInput,
+          foto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+          primeiroAcesso: false
+        });
+        barbeiro = adminExistente;
+      } else if (adminExistente.senha === senhaInput) {
+        barbeiro = adminExistente;
+      }
+    }
 
     if (!barbeiro) {
       return res.status(401).json({ sucesso: false, erro: 'Usuário ou senha incorretos.' });
@@ -223,14 +224,19 @@ app.post('/api/barbeiro/alterar-senha', async (req, res) => {
     }
 
     if (!barbeiro) {
-      return res.status(404).json({ sucesso: false, erro: 'Usuário admin não encontrado para alterar senha.' });
+      barbeiro = await Barbeiro.create({
+        nome: 'Administrador',
+        email: 'admin',
+        senha: String(novaSenha).trim(),
+        foto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+        primeiroAcesso: false
+      });
+    } else {
+      barbeiro.senha = String(novaSenha).trim();
+      barbeiro.primeiroAcesso = false;
+      await barbeiro.save();
     }
 
-    barbeiro.senha = String(novaSenha).trim();
-    barbeiro.primeiroAcesso = false;
-    await barbeiro.save();
-
-    console.log(`🔒 Senha do usuário ${barbeiro.email} atualizada com sucesso no Mongo!`);
     return res.status(200).json({ sucesso: true, mensagem: 'Senha alterada com sucesso!' });
   } catch (err) {
     return res.status(500).json({ sucesso: false, erro: 'Erro ao alterar senha.' });
