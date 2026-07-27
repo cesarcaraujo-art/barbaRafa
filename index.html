@@ -212,6 +212,7 @@
   const todosHorariosPadrao = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
   const fotoPadrao = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
 
+  // BUSCA AS CONFIGURAÇÕES, FOTOS, DIAS, HORÁRIOS E SERVIÇOS DIRETO DO MONGODB
   async function aplicarConfiguracoesSite() {
     try {
       const resp = await fetch(`${URL_BACKEND}/api/config-site`);
@@ -231,6 +232,11 @@
         if (configSite.foto2) document.getElementById('displayFoto2').src = configSite.foto2;
         if (configSite.foto3) document.getElementById('displayFoto3').src = configSite.foto3;
         if (configSite.foto4) document.getElementById('displayFoto4').src = configSite.foto4;
+
+        // Atualiza a memória local com as configurações sincronizadas da nuvem
+        if (configSite.diasPorBarbeiro) localStorage.setItem('diasAtendimentoPorBarbeiro', JSON.stringify(configSite.diasPorBarbeiro));
+        if (configSite.horariosPorBarbeiro) localStorage.setItem('horariosPorBarbeiro', JSON.stringify(configSite.horariosPorBarbeiro));
+        if (configSite.servicosPorBarbeiro) localStorage.setItem('servicosPorBarbeiro', JSON.stringify(configSite.servicosPorBarbeiro));
       }
     } catch (e) {
       console.warn("Servidor offline, mantendo exibição padrão:", e);
