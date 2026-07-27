@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agendamento - Barbearia Rafael</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #121212; color: #f5f5f5; padding: 20px; display: flex; justify-content: center; }
+    .container { max-width: 600px; width: 100%; background: #1e1e1e; padding: 25px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+    h1, h2 { text-align: center; margin-bottom: 20px; color: #e0a96d; }
+    .step { margin-bottom: 25px; }
+    label { display: block; margin-bottom: 8px; font-weight: bold; color: #ccc; }
+    
+    select, input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #444; background: #2a2a2a; color: #fff; margin-bottom: 15px; font-size: 1rem; }
+    
+    .barbeiros-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; margin-top: 10px; }
+    .barbeiro-card { background: #2a2a2a; border: 2px solid #333; border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; transition: 0.3s; }
+    .barbeiro-card:hover, .barbeiro-card.selected { border-color: #e0a96d; background: #33281e; }
+    .barbeiro-card img { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; border: 2px solid #e0a96d; }
+    
+    .slots-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .slot-btn { padding: 10px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+    .slot-btn:hover:not(:disabled), .slot-btn.selected { background: #e0a96d; color: #121212; font-weight: bold; }
+    
+    /* Estilo para botão de horário bloqueado/ocupado */
+    .slot-btn:disabled, .slot-btn.ocupado {
+      background: #181818 !important;
+      border-color: #333 !important;
+      color: #666 !important;
+      cursor: not-allowed !important;
+      opacity: 0.5;
+    }
+    
+    button.submit-btn { width: 100%; padding: 15px; background: #e0a96d; color: #121212; border: none; font-size: 1.1rem; font-weight: bold; border-radius: 6px; cursor: pointer; }
+    button.submit-btn:hover { background: #c89355; }
+    
+    .confirmation-box { display: none; background: #1b382b; border: 1px solid #2e7d32; padding: 20px; border-radius: 8px; margin-top: 20px; }
+    .action-btn { display: block; width: 100%; padding: 12px; border-radius: 6px; text-align: center; font-weight: bold; text-decoration: none; margin-top: 10px; font-size: 0.95rem; }
+    .calendar-action { background: #4285f4; color: #fff; }
+    .calendar-action:hover { background: #3367d6; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Barbearia Rafael</h1>
+
+  <!-- Passo 1: Barbeiro -->
+  <div class="step">
+    <h2>1. Escolha seu Barbeiro</h2>
+    <div class="barbeiros-grid" id="barbeirosGrid"></div>
+  </div>
+
+  <!-- Passo 2: Serviço -->
+  <div class="step">
+    <h2>2. Escolha o Serviço</h2>
+    <select id="servicoSelect">
+      <option value="">Primeiro escolha o barbeiro acima...</option>
+    </select>
+  </div>
+
+  <!-- Passo 3: Data e Horário -->
+  <div class="step">
+    <h2>3. Data e Horário</h2>
+    <label for="dataSelect">Selecione a data:</label>
+    <input type="date" id="dataSelect" onchange="validarDataSelecionada()">
+    
+    <label>Horários Disponíveis:</label>
+    <div class="slots-grid" id="slotsGrid">
+      <span style="color: #888; grid-column: span 3;">Selecione um barbeiro e a data acima...</span>
+    </div>
+  </div>
+
+  <!-- Passo 4: Seus Dados -->
+  <div class="step">
+    <h2>4. Seus Dados</h2>
+    <input type="text" id="nomeCliente" placeholder="Seu Nome Completo">
+    <input type="email" id="emailCliente" placeholder="Seu E-mail para Confirmação">
+    
+    <button class="submit-btn" onclick="confirmarAgendamento()">Confirmar Agendamento</button>
+  </div>
+
+  <div class="confirmation-box" id="confirmationBox">
+    <h3 style="color: #81c784;">✅ Agendamento Confirmado!</h3>
+    <p id="detailsText" style="margin-top: 10px; margin-bottom: 15px; line-height: 1.5;"></p>
+    <p style="font-size: 0.85rem; color: #a5d6a7; margin-bottom: 10px;">
+      📧 Um e-mail com a confirmação e detalhes foi enviado para a sua caixa de entrada.
+    </p>
+    
+    <a id="calendarLink" href="#" target="_blank" class="action-btn calendar-action">📅 Adicionar à Google Agenda</a>
+  </div>
+</div>
+
+<script>
+  const URL_BACKEND = 'https://barbarafa.onrender.com';
+
+  let barbeiroSelecionadoObj = null;
+  let horarioSelecionado = '';
+  const todosHorariosPadrao = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
+  const fotoPadrao = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
+
+  function configurarDataMinima() {
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoje.getDate()).padStart(2, '0');
+    const dataHojeStr = `${ano}-${mes}-${dia}`;
+
+    const inputData = document.getElementById('dataSelect');
+    if (inputData) {
+      inputData.setAttribute('min', dataHojeStr);
+    }
+  }
+
+  function validarDataSelecionada() {
+    const inputData = document.getElementById('dataSelect');
+    const dataVal = inputData.value;
+
+    if (!dataVal) return;
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    const [ano, mes, dia] = dataVal.split('-');
+    const dataEscolhida = new Date(ano, mes - 1, dia);
+
+    if (dataEscolhida < hoje) {
+      alert('Não é possível agendar em datas passadas. Por favor, escolha a data de hoje ou uma data futura.');
+      inputData.value = '';
+      gerarHorarios();
+      return;
+    }
+
+    gerarHorarios();
+  }
+
+  // 🚀 BUSCA OS BARBEIROS DIRETAMENTE DO BACKEND NO RENDER E USA LOCALSTORAGE COMO FALLBACK
+  async function carregarBarbeiros() {
+    const grid = document.getElementById('barbeirosGrid');
+    grid.innerHTML = '<span style="color: #888; grid-column: span 3;">Carregando barbeiros...</span>';
+
+    let barbeiros = [];
+
+    try {
+      const resposta = await fetch(`${URL_BACKEND}/api/barbeiros`);
+      if (resposta.ok) {
+        barbeiros = await resposta.json();
+      }
+    } catch (erro) {
+      console.warn("Servidor offline, tentando ler barbeiros do LocalStorage:", erro);
+    }
+
+    if (!barbeiros || barbeiros.length === 0) {
+      const dataLocal = localStorage.getItem('barbeiros');
+      barbeiros = dataLocal ? JSON.parse(dataLocal) : [{ id: 1, nome: 'Carlos Silva', foto: fotoPadrao }];
+    }
+
+    grid.innerHTML = '';
+
+    barbeiros.forEach(b => {
+      const card = document.createElement('div');
+      card.className = 'barbeiro-card';
+      card.onclick = () => {
+        document.querySelectorAll('.barbeiro-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        barbeiroSelecionadoObj = b;
+        carregarServicosDoBarbeiro(b.id);
+        gerarHorarios();
+      };
+      card.innerHTML = `
+        <img src="${b.foto || fotoPadrao}" alt="${b.nome}">
+        <div>${b.nome}</div>
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  function carregarServicosDoBarbeiro(barbeiroId) {
+    const configServicos = JSON.parse(localStorage.getItem('servicosPorBarbeiro')) || {};
+    const servicosBarbeiro = configServicos[barbeiroId] || [
+      { id: 1, nome: 'Corte de Cabelo', preco: 45.00 },
+      { id: 2, nome: 'Barba Completa', preco: 30.00 }
+    ];
+
+    const select = document.getElementById('servicoSelect');
+    if (servicosBarbeiro.length === 0) {
+      select.innerHTML = '<option value="">Sem serviços para este profissional</option>';
+      return;
+    }
+
+    select.innerHTML = '<option value="">Selecione um serviço...</option>';
+    servicosBarbeiro.forEach(s => {
+      const option = document.createElement('option');
+      option.value = `${s.nome}|${s.preco}`;
+      option.textContent = `${s.nome} - R$ ${parseFloat(s.preco).toFixed(2).replace('.', ',')}`;
+      select.appendChild(option);
+    });
+  }
+
+  // 📌 BUSCA E BLOQUEIA OS HORÁRIOS OCUPADOS
+  async function gerarHorarios() {
+    const grid = document.getElementById('slotsGrid');
+    const dataVal = document.getElementById('dataSelect').value;
+
+    if (!dataVal || !barbeiroSelecionadoObj) {
+      grid.innerHTML = '<span style="color: #888; grid-column: span 3;">Selecione barbeiro e data acima...</span>';
+      return;
+    }
+
+    // 1. Valida Dias de Atendimento do Barbeiro
+    const partesData = dataVal.split('-');
+    const dataObj = new Date(partesData[0], partesData[1] - 1, partesData[2]);
+    const diaSemana = dataObj.getDay();
+
+    const configDias = JSON.parse(localStorage.getItem('diasAtendimentoPorBarbeiro')) || {};
+    const diasPermitidos = configDias[barbeiroSelecionadoObj.id] || [1, 2, 3, 4, 5, 6];
+
+    if (!diasPermitidos.includes(diaSemana)) {
+      grid.innerHTML = `<span style="color: #ff5252; grid-column: span 3; font-weight: bold;">⚠️ ${barbeiroSelecionadoObj.nome} não atende neste dia.</span>`;
+      return;
+    }
+
+    // 2. Horários Liberados pelo Barbeiro
+    const configHorarios = JSON.parse(localStorage.getItem('horariosPorBarbeiro')) || {};
+    const horariosBarbeiro = configHorarios[barbeiroSelecionadoObj.id] || todosHorariosPadrao;
+
+    // 3. Obter Horários Ocupados no LocalStorage
+    const agendamentosLocal = JSON.parse(localStorage.getItem('agendamentos')) || [];
+    const ocupadosLocal = agendamentosLocal
+      .filter(a => a.data === dataVal && a.barbeiro === barbeiroSelecionadoObj.nome)
+      .map(a => a.hora);
+
+    // 4. Obter Horários Ocupados no Backend (Render)
+    let ocupadosServer = [];
+    try {
+      const resp = await fetch(`${URL_BACKEND}/api/horarios-ocupados?data=${dataVal}&barbeiro=${encodeURIComponent(barbeiroSelecionadoObj.nome)}`);
+      if (resp.ok) {
+        ocupadosServer = await resp.json();
+      }
+    } catch (e) {
+      console.warn("Servidor offline ou indisponível, usando validação local:", e);
+    }
+
+    // Une os horários ocupados tanto da API quanto do LocalStorage
+    const todosOcupados = [...new Set([...ocupadosLocal, ...ocupadosServer])];
+
+    grid.innerHTML = '';
+    horariosBarbeiro.forEach(h => {
+      const btn = document.createElement('button');
+      btn.className = 'slot-btn';
+      
+      if (todosOcupados.includes(h)) {
+        btn.innerText = `${h} (Ocupado)`;
+        btn.disabled = true;
+        btn.classList.add('ocupado');
+      } else {
+        btn.innerText = h;
+        btn.onclick = () => {
+          document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          horarioSelecionado = h;
+        };
+      }
+      grid.appendChild(btn);
+    });
+  }
+
+  function confirmarAgendamento() {
+    const servicoValue = document.getElementById('servicoSelect').value;
+    const data = document.getElementById('dataSelect').value;
+    const nome = document.getElementById('nomeCliente').value;
+    const email = document.getElementById('emailCliente').value;
+
+    if (!barbeiroSelecionadoObj || !servicoValue || !data || !horarioSelecionado || !nome || !email) {
+      alert('Por favor, preencha todos os campos!');
+      return;
+    }
+
+    const [servicoNome, servicoPreco] = servicoValue.split('|');
+
+    // 1. Salva no LocalStorage do navegador
+    const agendamentos = JSON.parse(localStorage.getItem('agendamentos')) || [];
+    agendamentos.push({
+      id: Date.now(),
+      cliente: nome,
+      barbeiro: barbeiroSelecionadoObj.nome,
+      servico: servicoNome,
+      preco: servicoPreco,
+      data: data,
+      hora: horarioSelecionado,
+      email: email
+    });
+    localStorage.setItem('agendamentos', JSON.stringify(agendamentos));
+
+    // 2. EXIBE A TELA DE CONFIRMAÇÃO INSTANTANEAMENTE 🚀
+    const dataFormatada = data.split('-').reverse().join('/');
+    const box = document.getElementById('confirmationBox');
+    document.getElementById('detailsText').innerHTML = `
+      <b>Cliente:</b> ${nome}<br>
+      <b>E-mail:</b> ${email}<br>
+      <b>Barbeiro:</b> ${barbeiroSelecionadoObj.nome}<br>
+      <b>Serviço:</b> ${servicoNome} (R$ ${parseFloat(servicoPreco).toFixed(2).replace('.', ',')})<br>
+      <b>Data/Hora:</b> ${dataFormatada} às ${horarioSelecionado}hs
+    `;
+
+    // Configura o botão do Google Agenda
+    const [ano, mes, dia] = data.split('-');
+    const [hora, min] = horarioSelecionado.split(':');
+    const dataInicio = `${ano}${mes}${dia}T${hora}${min}00`;
+    const horaFimNum = parseInt(hora) + 1;
+    const horaFim = (horaFimNum < 10 ? '0' : '') + horaFimNum + min + '00';
+    const dataFim = `${ano}${mes}${dia}T${horaFim}`;
+
+    const tituloAgenda = encodeURIComponent(`Corte/Serviço com ${barbeiroSelecionadoObj.nome}`);
+    const detalhesAgenda = encodeURIComponent(`Serviço: ${servicoNome}\nProfissional: ${barbeiroSelecionadoObj.nome}`);
+    document.getElementById('calendarLink').href = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${tituloAgenda}&dates=${dataInicio}/${dataFim}&details=${detalhesAgenda}`;
+
+    box.style.display = 'block';
+    box.scrollIntoView({ behavior: 'smooth' });
+
+    // Atualiza imediatamente a lista de horários na tela para bloquear o recém-agendado
+    gerarHorarios();
+
+    // 3. ENVIA O E-MAIL EM SEGUNDO PLANO
+    fetch(`${URL_BACKEND}/api/enviar-email-confirmacao`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nome,
+        email,
+        barbeiro: barbeiroSelecionadoObj.nome,
+        servico: servicoNome,
+        preco: servicoPreco,
+        data,
+        hora: horarioSelecionado
+      })
+    })
+    .then(res => res.json())
+    .then(data => console.log('E-mail disparado em segundo plano:', data))
+    .catch(err => console.warn('Erro em segundo plano ao enviar e-mail:', err));
+  }
+
+  // ⚡ Função de aquecimento do Render ao carregar a página
+  async function acordarServidor() {
+    try {
+      await fetch(`${URL_BACKEND}/api/ping`);
+      console.log('⚡ Servidor Render ativo e pronto!');
+    } catch (erro) {
+      console.warn('Iniciando aquecimento do servidor Render...');
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    acordarServidor();
+    configurarDataMinima();
+    carregarBarbeiros();
+  });
+</script>
+
+</body>
+</html>

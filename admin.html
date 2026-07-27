@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel do Barbeiro - Gestão Individual</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #121212; color: #f5f5f5; padding: 20px; display: flex; justify-content: center; }
+    .container { max-width: 650px; width: 100%; background: #1e1e1e; padding: 25px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+    h1, h2 { text-align: center; margin-bottom: 20px; color: #e0a96d; }
+    label { display: block; margin-bottom: 6px; font-weight: bold; color: #ccc; font-size: 0.9rem; }
+    input[type="text"], input[type="email"], input[type="password"], input[type="number"], select { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #444; background: #2a2a2a; color: #fff; margin-bottom: 12px; font-size: 0.95rem; }
+    
+    .nav-tabs { display: flex; gap: 6px; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; overflow-x: auto; }
+    .tab-btn { flex: 1; min-width: 90px; padding: 10px 5px; background: #2a2a2a; border: 1px solid #444; color: #ccc; border-radius: 6px; cursor: pointer; font-weight: bold; text-align: center; font-size: 0.8rem; transition: 0.2s; white-space: nowrap; }
+    .tab-btn.active { background: #e0a96d; color: #121212; border-color: #e0a96d; }
+
+    button { cursor: pointer; transition: 0.2s; font-weight: bold; width: 100%; padding: 10px; border-radius: 6px; border: none; font-size: 0.95rem; }
+    .btn-primary { background: #e0a96d; color: #121212; }
+    .btn-danger { background: #d32f2f; color: #fff; width: auto; padding: 6px 12px; font-size: 0.85rem; }
+    .btn-add { background: #2e7d32; color: #fff; margin-top: 5px; }
+
+    .btn-order { background: #333; color: #e0a96d; border: 1px solid #555; padding: 6px 10px; border-radius: 4px; font-size: 0.85rem; width: auto; }
+    
+    .admin-card { background: #181818; border: 1px dashed #e0a96d; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    .item-row { display: flex; gap: 8px; align-items: center; background: #2a2a2a; padding: 10px 12px; border-radius: 6px; margin-bottom: 10px; }
+    .item-row img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 1px solid #e0a96d; }
+    
+    .agenda-card { background: #2a2a2a; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #e0a96d; position: relative; }
+    .agenda-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: bold; color: #e0a96d; padding-right: 25px; }
+    .btn-delete-x { position: absolute; top: 12px; right: 12px; background: transparent; color: #ff5252; border: none; font-size: 1.1rem; cursor: pointer; padding: 2px 6px; border-radius: 4px; line-height: 1; }
+
+    .checkbox-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
+    .checkbox-item { background: #2a2a2a; padding: 10px; border-radius: 6px; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
+    .checkbox-item input { width: auto; margin: 0; }
+
+    .file-input-wrapper { margin-bottom: 15px; }
+    input[type="file"] { display: none; }
+    .custom-file-btn { display: inline-block; padding: 10px 15px; background: #333; border: 1px solid #555; color: #ccc; border-radius: 6px; cursor: pointer; font-size: 0.85rem; width: 100%; text-align: center; }
+
+    #loginSection, #adminPanel { display: none; }
+    .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .logout-link { color: #f44336; font-size: 0.9rem; cursor: pointer; }
+    
+    .barber-selector-bar { background: #282828; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- LOGIN -->
+  <div id="loginSection" style="display: block;">
+    <h1>Portal do Barbeiro</h1>
+    <form onsubmit="realizarLogin(event)">
+      <label>Usuário ou E-mail:</label>
+      <input type="text" id="loginUser" placeholder="admin" required>
+      <label>Senha:</label>
+      <input type="password" id="loginPass" placeholder="••••••••" required>
+      <button type="submit" class="btn-primary" id="btnSubmitLogin">Entrar no Painel</button>
+    </form>
+  </div>
+
+  <!-- PAINEL -->
+  <div id="adminPanel">
+    <div class="header-actions">
+      <h2>⚙️ Painel de Gestão</h2>
+      <span class="logout-link" onclick="logout()">Sair</span>
+    </div>
+
+    <!-- SELETOR DO BARBEIRO ATIVO -->
+    <div class="barber-selector-bar">
+      <label for="barbeiroAtivoSelect">Você está gerenciando o perfil de:</label>
+      <select id="barbeiroAtivoSelect" onchange="trocarBarbeiroAtivo(this.value)" style="margin-bottom:0;">
+      </select>
+    </div>
+
+    <!-- Navegação por Abas -->
+    <div class="nav-tabs">
+      <div class="tab-btn active" onclick="trocarAba('agendaTab', this)">📅 Agenda</div>
+      <div class="tab-btn" onclick="trocarAba('diasTab', this)">🗓️ Meus Dias</div>
+      <div class="tab-btn" onclick="trocarAba('horariosTab', this)">⏰ Meus Horários</div>
+      <div class="tab-btn" onclick="trocarAba('servicosTab', this)">✂️ Meus Serviços</div>
+      <div class="tab-btn" onclick="trocarAba('perfilTab', this)">👤 Equipe</div>
+    </div>
+
+    <!-- ABA 1: AGENDA -->
+    <div id="agendaTab" class="tab-content">
+      <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <div style="flex: 1;">
+          <label>Filtro de Agendamentos:</label>
+          <select id="filtroAgenda" onchange="renderizarAgenda()">
+            <option value="hoje">📌 Agendamentos de Hoje</option>
+            <option value="semana">📅 Próximos 7 Dias</option>
+            <option value="todos">📋 Todos os Agendamentos</option>
+          </select>
+        </div>
+      </div>
+      <div id="listaAgendamentos"></div>
+    </div>
+
+    <!-- ABA 2: DIAS ATENDIDOS -->
+    <div id="diasTab" class="tab-content" style="display: none;">
+      <label>Selecione os dias em que VOCÊ atende:</label>
+      <div class="checkbox-grid">
+        <div class="checkbox-item"><input type="checkbox" id="dia_1" value="1" onchange="salvarDiasAtendimento()"> Segunda-feira</div>
+        <div class="checkbox-item"><input type="checkbox" id="dia_2" value="2" onchange="salvarDiasAtendimento()"> Terça-feira</div>
+        <div class="checkbox-item"><input type="checkbox" id="dia_3" value="3" onchange="salvarDiasAtendimento()"> Quarta-feira</div>
+        <div class="checkbox-item"><input type="checkbox" id="dia_4" value="4" onchange="salvarDiasAtendimento()"> Quinta-feira</div>
+        <div class="checkbox-item"><input type="checkbox" id="dia_5" value="5" onchange="salvarDiasAtendimento()"> Sexta-feira</div>
+        <div class="checkbox-item"><input type="checkbox" id="dia_6" value="6" onchange="salvarDiasAtendimento()"> Sábado</div>
+        <div class="checkbox-item"><input type="checkbox" id="dia_0" value="0" onchange="salvarDiasAtendimento()"> Domingo</div>
+      </div>
+    </div>
+
+    <!-- ABA 3: HORÁRIOS DISPONÍVEIS -->
+    <div id="horariosTab" class="tab-content" style="display: none;">
+      <label>Selecione os horários que VOCÊ disponibiliza para atendimento:</label>
+      <div class="checkbox-grid" id="gridHorariosConfig"></div>
+    </div>
+
+    <!-- ABA 4: SERVIÇOS EXCLUSIVOS DO BARBEIRO -->
+    <div id="servicosTab" class="tab-content" style="display: none;">
+      <div class="admin-card">
+        <label>Cadastrar Serviço para este Barbeiro:</label>
+        <input type="text" id="novoServicoNome" placeholder="Ex: Barba Terapia, Pigmentação">
+        <input type="number" id="novoServicoPreco" placeholder="Ex: 40.00" step="0.01">
+        <button class="btn-add" onclick="adicionarServico()">+ Adicionar Serviço</button>
+      </div>
+      
+      <label>Catálogo de Serviços deste Profissional:</label>
+      <div id="listaServicos"></div>
+    </div>
+
+    <!-- ABA 5: EQUIPE & FOTOS -->
+    <div id="perfilTab" class="tab-content" style="display: none;">
+      <div class="admin-card">
+        <label>Cadastrar Novo Barbeiro:</label>
+        <input type="text" id="newNome" placeholder="Nome do Barbeiro">
+        
+        <div class="file-input-wrapper">
+          <label class="custom-file-btn" for="newFotoFile">📷 Selecionar Foto</label>
+          <input type="file" id="newFotoFile" accept="image/*" onchange="atualizarNomeArquivo(this)">
+          <span id="fileNameDisplay" style="font-size: 0.8rem; color: #888; display: block; margin-top: 5px;">Nenhum arquivo selecionado</span>
+        </div>
+
+        <button class="btn-add" onclick="adicionarBarbeiro()">+ Cadastrar Barbeiro</button>
+      </div>
+
+      <label>Barbeiros Cadastrados:</label>
+      <div id="adminList"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal de Troca Obrigatória de Senha -->
+<div id="modalPrimeiroAcesso" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center;">
+  <div style="background: #1e1e1e; padding: 30px; border-radius: 10px; max-width: 400px; width: 90%; border-top: 4px solid #e0a96d; color: #fff;">
+    <h2 style="color: #e0a96d; margin-bottom: 10px;">🔒 Primeiro Acesso</h2>
+    <p style="font-size: 0.9rem; color: #ccc; margin-bottom: 20px;">
+      Por razões de segurança, você precisa cadastrar uma nova senha pessoal antes de acessar o painel da barbearia.
+    </p>
+
+    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Nova Senha:</label>
+    <input type="password" id="novaSenha" placeholder="Mínimo 4 caracteres">
+
+    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Confirme a Nova Senha:</label>
+    <input type="password" id="confirmarNovaSenha" placeholder="Repita a nova senha">
+
+    <button onclick="salvarNovaSenha()" style="width: 100%; padding: 12px; background: #e0a96d; border: none; font-weight: bold; border-radius: 5px; cursor: pointer; color: #121212; margin-top: 10px;">
+      Salvar Nova Senha e Entrar
+    </button>
+  </div>
+</div>
+
+<script>
+  const URL_BACKEND = 'https://barbarafa.onrender.com';
+
+  const fotoPadrao = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
+  const todosHorariosPadrao = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
+
+  let barbeiroAtivoId = 1;
+
+  function getBarbeiros() { return JSON.parse(localStorage.getItem('barbeiros')) || [{ id: 1, nome: 'Carlos Silva', foto: fotoPadrao }]; }
+  function getAgendamentos() { return JSON.parse(localStorage.getItem('agendamentos')) || []; }
+  function saveItem(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+
+  function getServicosDoBarbeiro(barbeiroId) {
+    const configServicos = JSON.parse(localStorage.getItem('servicosPorBarbeiro')) || {};
+    return configServicos[barbeiroId] || [
+      { id: 1, nome: 'Corte de Cabelo', preco: 45.00 },
+      { id: 2, nome: 'Barba Completa', preco: 30.00 }
+    ];
+  }
+
+  function saveServicosDoBarbeiro(barbeiroId, list) {
+    const configServicos = JSON.parse(localStorage.getItem('servicosPorBarbeiro')) || {};
+    configServicos[barbeiroId] = list;
+    saveItem('servicosPorBarbeiro', configServicos);
+    renderizarServicos();
+  }
+
+  function carregarSeletorBarbeiros() {
+    const list = getBarbeiros();
+    const select = document.getElementById('barbeiroAtivoSelect');
+    select.innerHTML = '';
+    
+    list.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.id || b._id;
+      opt.innerText = b.nome;
+      select.appendChild(opt);
+    });
+
+    if (!list.some(b => (b.id || b._id) == barbeiroAtivoId) && list.length > 0) {
+      barbeiroAtivoId = list[0].id || list[0]._id;
+    }
+    select.value = barbeiroAtivoId;
+  }
+
+  function trocarBarbeiroAtivo(id) {
+    barbeiroAtivoId = id;
+    renderizarAbaAtual();
+  }
+
+  function trocarAba(abaId, element) {
+    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(abaId).style.display = 'block';
+    element.classList.add('active');
+    renderizarAbaAtual();
+  }
+
+  function renderizarAbaAtual() {
+    const abaAtiva = document.querySelector('.tab-btn.active').getAttribute('onclick');
+    if (abaAtiva.includes('agendaTab')) renderizarAgenda();
+    if (abaAtiva.includes('diasTab')) carregarDiasAtendimento();
+    if (abaAtiva.includes('horariosTab')) renderizarHorariosConfig();
+    if (abaAtiva.includes('servicosTab')) renderizarServicos();
+    if (abaAtiva.includes('perfilTab')) renderizarBarbeiros();
+  }
+
+  function renderizarAgenda() {
+    const agendamentos = getAgendamentos();
+    const barbeiros = getBarbeiros();
+    const barbeiroAtual = barbeiros.find(b => (b.id || b._id) === barbeiroAtivoId);
+    const container = document.getElementById('listaAgendamentos');
+    container.innerHTML = '';
+
+    const filtro = document.getElementById('filtroAgenda').value;
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    const filtrados = agendamentos.filter(a => {
+      if (barbeiroAtual && a.barbeiro !== barbeiroAtual.nome) return false;
+
+      const partesData = a.data.split('-');
+      const dataItem = new Date(partesData[0], partesData[1] - 1, partesData[2]);
+      dataItem.setHours(0, 0, 0, 0);
+
+      if (filtro === 'hoje') return dataItem.getTime() === hoje.getTime();
+      if (filtro === 'semana') {
+        const proximos7Dias = new Date(hoje);
+        proximos7Dias.setDate(hoje.getDate() + 7);
+        return dataItem >= hoje && dataItem <= proximos7Dias;
+      }
+      return true;
+    });
+
+    if (filtrados.length === 0) {
+      container.innerHTML = '<p style="color:#888; text-align:center; padding: 20px;">Nenhum agendamento encontrado.</p>';
+      return;
+    }
+
+    filtrados.sort((a, b) => new Date(a.data + 'T' + a.hora) - new Date(b.data + 'T' + b.hora));
+
+    filtrados.forEach(a => {
+      const card = document.createElement('div');
+      card.className = 'agenda-card';
+      const dataFormatada = a.data.split('-').reverse().join('/');
+      card.innerHTML = `
+        <button class="btn-delete-x" onclick="excluirAgendamento('${a.id}')" title="Excluir Agendamento">✖</button>
+        <div class="agenda-header">
+          <span>🕒 ${a.hora} hs — ${dataFormatada}</span>
+          <span>💈 ${a.barbeiro}</span>
+        </div>
+        <div><b>Cliente:</b> ${a.cliente}</div>
+        <div><b>Serviço:</b> ${a.servico}</div>
+        <div style="font-size:0.85rem; color:#aaa; margin-top:5px;">📱 Whats: ${a.whats || 'Não informado'}</div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  function excluirAgendamento(id) {
+    if (confirm('Deseja excluir este agendamento?')) {
+      saveItem('agendamentos', getAgendamentos().filter(a => a.id !== id));
+      renderizarAgenda();
+    }
+  }
+
+  function carregarDiasAtendimento() {
+    const configDias = JSON.parse(localStorage.getItem('diasAtendimentoPorBarbeiro')) || {};
+    const diasBarbeiro = configDias[barbeiroAtivoId] || [1, 2, 3, 4, 5, 6];
+
+    for (let i = 0; i <= 6; i++) {
+      const chk = document.getElementById(`dia_${i}`);
+      if (chk) chk.checked = diasBarbeiro.includes(i);
+    }
+  }
+
+  function salvarDiasAtendimento() {
+    const configDias = JSON.parse(localStorage.getItem('diasAtendimentoPorBarbeiro')) || {};
+    const selecionados = [];
+    for (let i = 0; i <= 6; i++) {
+      const chk = document.getElementById(`dia_${i}`);
+      if (chk && chk.checked) selecionados.push(i);
+    }
+    configDias[barbeiroAtivoId] = selecionados;
+    saveItem('diasAtendimentoPorBarbeiro', configDias);
+  }
+
+  function renderizarHorariosConfig() {
+    const configHorarios = JSON.parse(localStorage.getItem('horariosPorBarbeiro')) || {};
+    const horariosLiberados = configHorarios[barbeiroAtivoId] || todosHorariosPadrao;
+    const container = document.getElementById('gridHorariosConfig');
+    container.innerHTML = '';
+
+    todosHorariosPadrao.forEach(h => {
+      const isChecked = horariosLiberados.includes(h);
+      const item = document.createElement('div');
+      item.className = 'checkbox-item';
+      item.innerHTML = `
+        <input type="checkbox" value="${h}" ${isChecked ? 'checked' : ''} onchange="salvarHorariosAtendimento()">
+        ${h} hs
+      `;
+      container.appendChild(item);
+    });
+  }
+
+  function salvarHorariosAtendimento() {
+    const configHorarios = JSON.parse(localStorage.getItem('horariosPorBarbeiro')) || {};
+    const selecionados = [];
+    document.querySelectorAll('#gridHorariosConfig input[type="checkbox"]').forEach(chk => {
+      if (chk.checked) selecionados.push(chk.value);
+    });
+    configHorarios[barbeiroAtivoId] = selecionados;
+    saveItem('horariosPorBarbeiro', configHorarios);
+  }
+
+  function renderizarServicos() {
+    const list = getServicosDoBarbeiro(barbeiroAtivoId);
+    const container = document.getElementById('listaServicos');
+    container.innerHTML = '';
+
+    if (list.length === 0) {
+      container.innerHTML = '<p style="color:#888; text-align:center; padding:10px;">Nenhum serviço cadastrado para este barbeiro.</p>';
+      return;
+    }
+
+    list.forEach((s, index) => {
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      row.innerHTML = `
+        <button class="btn-order" onclick="moverServico(${index}, -1)" ${index === 0 ? 'disabled style="opacity:0.3;"' : ''}>⬆️</button>
+        <button class="btn-order" onclick="moverServico(${index}, 1)" ${index === list.length - 1 ? 'disabled style="opacity:0.3;"' : ''}>⬇️</button>
+        <input type="text" value="${s.nome}" onchange="atualizarServico(${s.id}, 'nome', this.value)" style="flex:2; margin:0;">
+        <input type="number" value="${parseFloat(s.preco).toFixed(2)}" step="0.01" onchange="atualizarServico(${s.id}, 'preco', parseFloat(this.value))" style="flex:1; margin:0;">
+        <button class="btn-danger" onclick="removerServico(${s.id})">✖</button>
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  function moverServico(index, direcao) {
+    const list = getServicosDoBarbeiro(barbeiroAtivoId);
+    const novoIndex = index + direcao;
+    if (novoIndex < 0 || novoIndex >= list.length) return;
+    const temp = list[index];
+    list[index] = list[novoIndex];
+    list[novoIndex] = temp;
+    saveServicosDoBarbeiro(barbeiroAtivoId, list);
+  }
+
+  function adicionarServico() {
+    const nome = document.getElementById('novoServicoNome').value;
+    const preco = parseFloat(document.getElementById('novoServicoPreco').value);
+    if (!nome || isNaN(preco)) return alert('Informe o nome e o preço!');
+    
+    const list = getServicosDoBarbeiro(barbeiroAtivoId);
+    list.push({ id: Date.now(), nome, preco });
+    saveServicosDoBarbeiro(barbeiroAtivoId, list);
+    
+    document.getElementById('novoServicoNome').value = '';
+    document.getElementById('novoServicoPreco').value = '';
+  }
+
+  function atualizarServico(id, campo, valor) {
+    const list = getServicosDoBarbeiro(barbeiroAtivoId);
+    const item = list.find(s => s.id === id);
+    if (item) {
+      item[campo] = valor;
+      saveServicosDoBarbeiro(barbeiroAtivoId, list);
+    }
+  }
+
+  function removerServico(id) {
+    const list = getServicosDoBarbeiro(barbeiroAtivoId).filter(s => s.id !== id);
+    saveServicosDoBarbeiro(barbeiroAtivoId, list);
+  }
+
+  function atualizarNomeArquivo(input) {
+    document.getElementById('fileNameDisplay').innerText = input.files[0] ? input.files[0].name : 'Nenhum arquivo selecionado';
+  }
+
+  function converterBase64(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function adicionarBarbeiro() {
+    const nome = document.getElementById('newNome').value;
+    const fileInput = document.getElementById('newFotoFile');
+    if (!nome) return alert('Digite o nome do barbeiro!');
+
+    let fotoStr = fotoPadrao;
+    if (fileInput.files.length > 0) {
+      fotoStr = await converterBase64(fileInput.files[0]);
+    }
+
+    try {
+      const resp = await fetch(`${URL_BACKEND}/api/barbeiros`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, foto: fotoStr })
+      });
+
+      const dados = await resp.json();
+      if (dados.sucesso) {
+        alert('Barbeiro cadastrado com sucesso!');
+        document.getElementById('newNome').value = '';
+        fileInput.value = '';
+        document.getElementById('fileNameDisplay').innerText = 'Nenhum arquivo selecionado';
+        
+        await carregarEAtualizarBarbeirosServidor();
+      } else {
+        alert(dados.erro || 'Erro ao cadastrar barbeiro.');
+      }
+    } catch (err) {
+      console.error('Erro ao adicionar barbeiro:', err);
+      alert('Erro de conexão com o servidor ao salvar foto.');
+    }
+  }
+
+  async function alterarFotoExistente(id, fileInput) {
+    if (fileInput.files.length === 0) return;
+    const novaFoto = await converterBase64(fileInput.files[0]);
+
+    try {
+      const resp = await fetch(`${URL_BACKEND}/api/barbeiros/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ foto: novaFoto })
+      });
+
+      const dados = await resp.json();
+      if (dados.sucesso) {
+        alert('Foto atualizada com sucesso!');
+        await carregarEAtualizarBarbeirosServidor();
+      } else {
+        alert(dados.erro || 'Erro ao atualizar foto.');
+      }
+    } catch (err) {
+      console.error('Erro ao alterar foto:', err);
+      alert('Erro de comunicação com o servidor ao enviar foto.');
+    }
+  }
+
+  // 🚀 ATUALIZADO: Normaliza _id e id do MongoDB
+  async function carregarEAtualizarBarbeirosServidor() {
+    try {
+      const resp = await fetch(`${URL_BACKEND}/api/barbeiros`);
+      if (resp.ok) {
+        const barbeiros = await resp.json();
+        const listaNormalizada = barbeiros.map(b => ({
+          id: b.id || b._id,
+          nome: b.nome,
+          foto: b.foto
+        }));
+        saveItem('barbeiros', listaNormalizada);
+        carregarSeletorBarbeiros();
+        renderizarBarbeiros();
+      }
+    } catch (e) {
+      console.warn("Erro ao sincronizar barbeiros:", e);
+    }
+  }
+
+  // 🚀 ATUALIZADO: Altera o nome no servidor no Render
+  async function atualizarBarbeiro(id, nome) {
+    if (!nome.trim()) return;
+
+    try {
+      const resp = await fetch(`${URL_BACKEND}/api/barbeiros/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome: nome.trim() })
+      });
+
+      const dados = await resp.json();
+      if (dados.sucesso) {
+        await carregarEAtualizarBarbeirosServidor();
+      } else {
+        alert(dados.erro || 'Erro ao atualizar nome.');
+      }
+    } catch (err) {
+      console.error('Erro ao atualizar nome do barbeiro:', err);
+      alert('Erro de comunicação ao atualizar o nome do barbeiro.');
+    }
+  }
+
+  // 🚀 ATUALIZADO: Exclui o barbeiro do servidor no Render usando o ID do Mongo
+  async function removerBarbeiro(id) {
+    if (!confirm('Tem certeza que deseja remover este barbeiro?')) return;
+
+    try {
+      const resp = await fetch(`${URL_BACKEND}/api/barbeiros/${id}`, {
+        method: 'DELETE'
+      });
+
+      const dados = await resp.json();
+      if (dados.sucesso) {
+        alert('Barbeiro removido com sucesso!');
+        await carregarEAtualizarBarbeirosServidor();
+      } else {
+        alert(dados.erro || 'Erro ao remover barbeiro.');
+      }
+    } catch (err) {
+      console.error('Erro ao remover barbeiro:', err);
+      alert('Erro de conexão ao tentar remover o barbeiro.');
+    }
+  }
+
+  // 🚀 ATUALIZADO: Garante que os IDs de texto (Strings) funcionem com aspas nos atributos HTML
+  function renderizarBarbeiros() {
+    const list = getBarbeiros();
+    const container = document.getElementById('adminList');
+    container.innerHTML = '';
+    
+    list.forEach(b => {
+      const idValido = b.id || b._id;
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      row.innerHTML = `
+        <img src="${b.foto || fotoPadrao}" alt="${b.nome}">
+        <input type="text" value="${b.nome}" onchange="atualizarBarbeiro('${idValido}', this.value)" style="flex:1; margin:0;">
+        <label class="custom-file-btn" for="file_${idValido}" style="width:auto; padding:6px 10px; margin:0;">Foto</label>
+        <input type="file" id="file_${idValido}" accept="image/*" onchange="alterarFotoExistente('${idValido}', this)">
+        <button class="btn-danger" onclick="removerBarbeiro('${idValido}')">✖</button>
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  // 🚀 AUTENTICAÇÃO DIRETA E DIRETO AO PONTO
+  async function realizarLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('loginUser').value;
+    const senha = document.getElementById('loginPass').value;
+    const btnSubmit = document.getElementById('btnSubmitLogin');
+
+    if (btnSubmit) {
+      btnSubmit.innerText = 'Entrando...';
+      btnSubmit.disabled = true;
+    }
+
+    try {
+      const resposta = await fetch(`${URL_BACKEND}/api/barbeiro/login`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({ email: email.trim(), senha: senha.trim() })
+      });
+
+      const dados = await resposta.json();
+
+      if (resposta.ok && dados.sucesso) {
+        sessionStorage.setItem('barbeiroLogado', JSON.stringify(dados.barbeiro));
+        sessionStorage.setItem('autenticado', 'true');
+
+        if (dados.barbeiro.primeiroAcesso === true) {
+          document.getElementById('modalPrimeiroAcesso').style.display = 'flex';
+        } else {
+          await mostrarPainel();
+        }
+      } else {
+        alert(dados.erro || 'Usuário ou senha incorretos!');
+      }
+
+    } catch (erro) {
+      console.error('Erro de conexão:', erro);
+      alert('Erro de comunicação com o servidor. Tente novamente em alguns instantes.');
+    } finally {
+      if (btnSubmit) {
+        btnSubmit.innerText = 'Entrar no Painel';
+        btnSubmit.disabled = false;
+      }
+    }
+  }
+
+  async function salvarNovaSenha() {
+    const barbeiroStr = sessionStorage.getItem('barbeiroLogado');
+    if (!barbeiroStr) return alert('Sessão expirada. Faça login novamente.');
+
+    const barbeiro = JSON.parse(barbeiroStr);
+    const novaSenha = document.getElementById('novaSenha').value;
+    const confirmarNovaSenha = document.getElementById('confirmarNovaSenha').value;
+
+    if (!novaSenha || novaSenha.length < 4) {
+      alert('A nova senha precisa ter no mínimo 4 caracteres.');
+      return;
+    }
+
+    if (novaSenha !== confirmarNovaSenha) {
+      alert('As senhas não coincidem!');
+      return;
+    }
+
+    try {
+      const resposta = await fetch(`${URL_BACKEND}/api/barbeiro/alterar-senha`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idBarbeiro: barbeiro.id || barbeiro._id,
+          novaSenha: novaSenha
+        })
+      });
+
+      const dados = await resposta.json();
+
+      if (dados.sucesso) {
+        alert('Senha redefinida com sucesso! Bem-vindo.');
+        document.getElementById('modalPrimeiroAcesso').style.display = 'none';
+        
+        barbeiro.primeiroAcesso = false;
+        sessionStorage.setItem('barbeiroLogado', JSON.stringify(barbeiro));
+        await mostrarPainel();
+      } else {
+        alert(dados.erro || 'Falha ao redefinir a senha.');
+      }
+    } catch (erro) {
+      console.error('Erro ao alterar a senha:', erro);
+      alert('Erro de conexão ao alterar a senha.');
+    }
+  }
+
+  function logout() {
+    sessionStorage.removeItem('autenticado');
+    sessionStorage.removeItem('barbeiroLogado');
+    document.getElementById('loginSection').style.display = 'block';
+    document.getElementById('adminPanel').style.display = 'none';
+  }
+
+  async function mostrarPainel() {
+    document.getElementById('loginSection').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'block';
+    await carregarEAtualizarBarbeirosServidor();
+    renderizarAbaAtual();
+  }
+
+  // ⚡ Função de aquecimento do Render ao carregar a página
+  async function acordarServidor() {
+    try {
+      await fetch(`${URL_BACKEND}/api/ping`);
+      console.log('⚡ Servidor Render ativo e pronto!');
+    } catch (erro) {
+      console.warn('Iniciando aquecimento do servidor Render...');
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', async () => {
+    acordarServidor();
+
+    if (sessionStorage.getItem('autenticado') === 'true') {
+      const barbeiroLogado = JSON.parse(sessionStorage.getItem('barbeiroLogado') || '{}');
+      if (barbeiroLogado.primeiroAcesso) {
+        document.getElementById('modalPrimeiroAcesso').style.display = 'flex';
+      } else {
+        await mostrarPainel();
+      }
+    }
+  });
+</script>
+
+</body>
+</html>
