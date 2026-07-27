@@ -199,24 +199,56 @@ app.post('/api/barbeiro/login', async (req, res) => {
   }
 });
 
-// ALTERAR SENHA
+// ALTERAR SENHA (ROBUSTA PARA ADMIN E BARBEIROS)
 app.post('/api/barbeiro/alterar-senha', async (req, res) => {
   try {
     const { idBarbeiro, novaSenha } = req.body || {};
+    
     if (!novaSenha || novaSenha.length < 4) {
-      return res.status(400).json({ sucesso: false, erro: 'Mínimo de 4 caracteres.' });
+      return res.status(400).json({ sucesso: false, erro: 'A senha deve ter no mínimo 4 caracteres.' });
     }
 
-    const barbeiro = await Barbeiro.findById(idBarbeiro);
-    if (!barbeiro) return res.status(404).json({ sucesso: false, erro: 'Não encontrado.' });
+    let barbeiro = null;
 
-    barbeiro.senha = String(novaSenha).trim();
-    barbeiro.primeiroAcesso = false;
+    // 1. Se for um ID válido do MongoDB, busca por ID
+    if (idBarbeiro && mongoose.Types.ObjectId.isValid(idBarbeiro)) {
+      barbeiro = await Barbeiro.findById(idBarbeiro);
+    }
+
+    // 2. Se não encontrou (ex: veio 'admin_master_id'), busca pelo e-mail ou nome do admin
+    if (!barbeiro) {
+      barbeiro = await Barbeiro.findOne({
+        $or: [
+          { email: 'admin' },
+          { nome: new RegExp('administrador', 'i') }
+        ]
+      });
+    }
+
+    // 3. Se o admin ainda não existia fisicamente no MongoDB, cria agora com a nova senha
+    if (!barbeiro) {
+      barbeiro = new Barbeiro({
+        nome: 'Administrador',
+        email: 'admin',
+        senha: String(novaSenha).trim(),
+        foto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+        primeiroAcesso: false
+      });
+    } else {
+      barbeiro.senha = String(novaSenha).trim();
+      barbeiro.primeiroAcesso = false;
+    }
+
     await barbeiro.save();
+    console.log(`✅ Senha alterada com sucesso no MongoDB para o usuário: ${barbeiro.email}`);
 
-    return res.status(200).json({ sucesso: true, mensagem: 'Senha alterada!' });
+    return res.status(200).json({ 
+      sucesso: true, 
+      mensagem: 'Senha alterada com sucesso!' 
+    });
   } catch (err) {
-    return res.status(500).json({ sucesso: false, erro: 'Erro ao alterar senha.' });
+    console.error('❌ Erro ao alterar senha:', err);
+    return res.status(500).json({ sucesso: false, erro: 'Erro interno ao alterar senha.' });
   }
 });
 
