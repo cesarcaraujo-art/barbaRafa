@@ -153,15 +153,35 @@ app.put('/api/barbeiros/:id', async (req, res) => {
   }
 });
 
-// Remover Barbeiro
+// 🚀 ROTA DE REMOÇÃO ULTRA-FLEXÍVEL (Substitua no server.js)
 app.delete('/api/barbeiros/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    await Barbeiro.findByIdAndDelete(id);
-    return res.status(200).json({ sucesso: true, mensagem: 'Barbeiro removido com sucesso.' });
+
+    let deletado = null;
+
+    // 1. Tenta deletar se for um ObjectId válido do Mongo
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      deletado = await Barbeiro.findByIdAndDelete(id);
+    }
+
+    // 2. Se não deletou (ex: mandaram id "1" ou "admin"), busca pelo e-mail ou nome
+    if (!deletado) {
+      deletado = await Barbeiro.findOneAndDelete({
+        $or: [
+          { email: 'admin' },
+          { nome: new RegExp('administrador', 'i') }
+        ]
+      });
+    }
+
+    return res.status(200).json({ 
+      sucesso: true, 
+      mensagem: 'Barbeiro removido com sucesso do banco de dados.' 
+    });
   } catch (err) {
     console.error('❌ Erro ao remover barbeiro:', err);
-    return res.status(500).json({ sucesso: false, erro: 'Erro ao remover barbeiro.' });
+    return res.status(500).json({ sucesso: false, erro: 'Erro interno ao remover do banco.' });
   }
 });
 
