@@ -188,7 +188,6 @@
       </div>
     </div>
 
-    <!-- ABA ALTERAR SENHA -->
     <div id="senhaTab" class="tab-content" style="display: none;">
       <div class="admin-card">
         <label>🔒 Nova Senha do Administrador:</label>
@@ -206,11 +205,26 @@
   const todosHorariosPadrao = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
 
   let barbeiroAtivoId = 1;
+  let configGeralNuvem = {};
   let fotosGaleriaMemoria = { foto1: '', foto2: '', foto3: '', foto4: '' };
 
   function getBarbeiros() { return JSON.parse(localStorage.getItem('barbeiros')) || [{ id: 1, nome: 'Carlos Silva', foto: fotoPadrao }]; }
   function getAgendamentos() { return JSON.parse(localStorage.getItem('agendamentos')) || []; }
   function saveItem(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+
+  async function carregarTudoDoBanco() {
+    try {
+      const resp = await fetch(`${URL_BACKEND}/api/config-site`);
+      if (resp.ok) {
+        configGeralNuvem = await resp.json();
+        if (configGeralNuvem.diasPorBarbeiro) saveItem('diasAtendimentoPorBarbeiro', configGeralNuvem.diasPorBarbeiro);
+        if (configGeralNuvem.horariosPorBarbeiro) saveItem('horariosPorBarbeiro', configGeralNuvem.horariosPorBarbeiro);
+        if (configGeralNuvem.servicosPorBarbeiro) saveItem('servicosPorBarbeiro', configGeralNuvem.servicosPorBarbeiro);
+      }
+    } catch (e) {
+      console.warn("Erro ao buscar dados da nuvem:", e);
+    }
+  }
 
   function getServicosDoBarbeiro(barbeiroId) {
     const configServicos = JSON.parse(localStorage.getItem('servicosPorBarbeiro')) || {};
@@ -220,11 +234,12 @@
     ];
   }
 
-  function saveServicosDoBarbeiro(barbeiroId, list) {
+  async function saveServicosDoBarbeiro(barbeiroId, list) {
     const configServicos = JSON.parse(localStorage.getItem('servicosPorBarbeiro')) || {};
     configServicos[barbeiroId] = list;
     saveItem('servicosPorBarbeiro', configServicos);
     renderizarServicos();
+    await atualizarNuvem({ servicosPorBarbeiro: configServicos });
   }
 
   function carregarSeletorBarbeiros() {
@@ -339,7 +354,7 @@
     }
   }
 
-  function salvarDiasAtendimento() {
+  async function salvarDiasAtendimento() {
     const configDias = JSON.parse(localStorage.getItem('diasAtendimentoPorBarbeiro')) || {};
     const selecionados = [];
     for (let i = 0; i <= 6; i++) {
@@ -348,6 +363,7 @@
     }
     configDias[barbeiroAtivoId] = selecionados;
     saveItem('diasAtendimentoPorBarbeiro', configDias);
+    await atualizarNuvem({ diasPorBarbeiro: configDias });
   }
 
   function renderizarHorariosConfig() {
@@ -368,7 +384,7 @@
     });
   }
 
-  function salvarHorariosAtendimento() {
+  async function salvarHorariosAtendimento() {
     const configHorarios = JSON.parse(localStorage.getItem('horariosPorBarbeiro')) || {};
     const selecionados = [];
     document.querySelectorAll('#gridHorariosConfig input[type="checkbox"]').forEach(chk => {
@@ -376,6 +392,7 @@
     });
     configHorarios[barbeiroAtivoId] = selecionados;
     saveItem('horariosPorBarbeiro', configHorarios);
+    await atualizarNuvem({ horariosPorBarbeiro: configHorarios });
   }
 
   function renderizarServicos() {
@@ -608,6 +625,18 @@
     }
   }
 
+  async function atualizarNuvem(objetoParcial) {
+    try {
+      await fetch(`${URL_BACKEND}/api/config-site`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(objetoParcial)
+      });
+    } catch (e) {
+      console.warn("Erro ao atualizar nuvem:", e);
+    }
+  }
+
   async function salvarConfiguracoesSite() {
     const btn = document.getElementById('btnSalvarSite');
     btn.innerText = 'Salvando na Nuvem...';
@@ -644,7 +673,6 @@
     }
   }
 
-  // ALTERAÇÃO DE SENHA DO PAINEL
   async function salvarNovaSenha() {
     const novaSenha = document.getElementById('novaSenhaInput').value;
     if (!novaSenha || novaSenha.length < 4) {
@@ -675,7 +703,6 @@
     }
   }
 
-  // AUTENTICAÇÃO
   async function realizarLogin(e) {
     e.preventDefault();
     const email = document.getElementById('loginUser').value;
@@ -724,6 +751,7 @@
   async function mostrarPainel() {
     document.getElementById('loginSection').style.display = 'none';
     document.getElementById('adminPanel').style.display = 'block';
+    await carregarTudoDoBanco();
     await carregarEAtualizarBarbeirosServidor();
     renderizarAbaAtual();
   }
