@@ -10,7 +10,7 @@
   
   <meta property="og:title" content="Barbearia Rafael - Agendamento Online">
   <meta property="og:description" content="Agende seu horário com rapidez e facilidade em um ambiente climatizado e exclusivo.">
-  <meta property="og:image" content="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800">
+  <meta id="ogImage" property="og:image" content="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800">
   <meta property="og:type" content="website">
 
   <title>Agendamento - Barbearia Rafael</title>
@@ -220,6 +220,11 @@
       const resp = await fetch(`${URL_BACKEND}/api/config-site?nocache=${Date.now()}`);
       if (resp.ok) {
         const configSite = await resp.json();
+
+        if (configSite.fotoShareWhatsapp) {
+          const ogMeta = document.getElementById('ogImage');
+          if (ogMeta) ogMeta.setAttribute('content', configSite.fotoShareWhatsapp);
+        }
 
         if (configSite.horarioTxt) document.getElementById('displayHorarioTxt').innerText = configSite.horarioTxt;
         if (configSite.endereco) {
