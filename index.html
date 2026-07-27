@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <!-- META TAGS DE COMPARTILHAMENTO (OPEN GRAPH / WHATSAPP) -->
   <meta property="og:title" content="Barbearia Rafael - Agendamento Online">
   <meta property="og:description" content="Agende seu horário com rapidez e facilidade em um ambiente climatizado e exclusivo.">
   <meta property="og:image" content="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800">
@@ -17,7 +16,6 @@
     html { scroll-behavior: smooth; }
     body { background-color: #121212; color: #f5f5f5; padding-top: 70px; }
 
-    /* ANIMAÇÕES CSS */
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
@@ -26,7 +24,6 @@
     .hover-scale { transition: transform 0.3s ease, box-shadow 0.3s ease; }
     .hover-scale:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(224, 169, 109, 0.2); }
 
-    /* HEADER & NAVBAR */
     header.navbar {
       position: fixed; top: 0; left: 0; width: 100%; height: 70px;
       background: #181818; border-bottom: 1px solid #333; z-index: 1000;
@@ -37,51 +34,42 @@
     .nav-links a { color: #ccc; text-decoration: none; font-size: 0.95rem; font-weight: 500; transition: 0.2s; }
     .nav-links a:hover { color: #e0a96d; }
 
-    /* CONTAINER PRINCIPAL */
     .container { max-width: 900px; width: 90%; margin: 30px auto; background: #1e1e1e; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
     h1, h2, h3 { text-align: center; margin-bottom: 20px; color: #e0a96d; }
     
-    /* SEÇÃO HERO BANNER */
     .hero-section { text-align: center; padding: 30px 10px; border-bottom: 1px solid #333; margin-bottom: 30px; }
     .schedule-badge { display: inline-block; background: #2a2a2a; color: #e0a96d; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; margin-bottom: 15px; border: 1px solid #444; }
     .hero-title { font-size: 2.2rem; color: #f5f5f5; margin-bottom: 10px; }
     .hero-subtitle { color: #aaa; font-size: 1rem; margin-bottom: 20px; }
 
-    /* PASSOS DO AGENDAMENTO */
     .step { margin-bottom: 30px; background: #252525; padding: 20px; border-radius: 10px; border: 1px solid #333; }
     label { display: block; margin-bottom: 8px; font-weight: bold; color: #ccc; }
     select, input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #444; background: #2a2a2a; color: #fff; margin-bottom: 15px; font-size: 1rem; }
 
-    /* CARDS DE BARBEIROS */
     .barbeiros-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; margin-top: 10px; }
     .barbeiro-card { background: #2a2a2a; border: 2px solid #333; border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; transition: 0.3s; }
     .barbeiro-card:hover, .barbeiro-card.selected { border-color: #e0a96d; background: #33281e; }
     .barbeiro-card img { width: 75px; height: 75px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; border: 2px solid #e0a96d; }
 
-    /* GRADE DE HORÁRIOS */
     .slots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; }
     .slot-btn { padding: 10px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 6px; cursor: pointer; transition: 0.2s; font-size: 0.9rem; }
     .slot-btn:hover:not(:disabled), .slot-btn.selected { background: #e0a96d; color: #121212; font-weight: bold; }
     .slot-btn:disabled, .slot-btn.ocupado { background: #181818 !important; border-color: #333 !important; color: #666 !important; cursor: not-allowed !important; opacity: 0.5; }
 
-    /* BOTÃO PRINCIPAL */
     button.submit-btn { width: 100%; padding: 15px; background: #e0a96d; color: #121212; border: none; font-size: 1.1rem; font-weight: bold; border-radius: 6px; cursor: pointer; }
     button.submit-btn:hover { background: #c89355; }
 
-    /* CAIXA DE CONFIRMAÇÃO */
     .confirmation-box { display: none; background: #1b382b; border: 1px solid #2e7d32; padding: 20px; border-radius: 8px; margin-top: 20px; }
     .action-btn { display: block; width: 100%; padding: 12px; border-radius: 6px; text-align: center; font-weight: bold; text-decoration: none; margin-top: 10px; font-size: 0.95rem; }
     .calendar-action { background: #4285f4; color: #fff; }
     .calendar-action:hover { background: #3367d6; }
 
-    /* LOCALIZAÇÃO & GALERIA */
     .section-standard { margin-top: 40px; padding-top: 20px; border-top: 1px solid #333; }
     .map-wrapper { width: 100%; max-width: 100%; height: 300px; border-radius: 10px; overflow: hidden; margin-top: 15px; border: 1px solid #444; }
     
     .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-top: 15px; }
     .gallery-item img { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #333; }
 
-    /* BOTÃO FLUTUANTE DO WHATSAPP */
     .whatsapp-float {
       position: fixed; bottom: 20px; right: 20px;
       background: #25d366; color: #fff;
@@ -91,7 +79,6 @@
       text-decoration: none; font-size: 28px;
     }
 
-    /* RODAPÉ */
     footer { text-align: center; margin-top: 40px; padding: 20px 0; color: #888; font-size: 0.85rem; border-top: 1px solid #222; }
 
     @media (max-width: 600px) {
@@ -103,7 +90,6 @@
 </head>
 <body>
 
-<!-- BARRA DE NAVEGAÇÃO -->
 <header class="navbar">
   <a href="#home" class="navbar-brand">💈 Barbearia Rafael</a>
   <ul class="nav-links">
@@ -116,23 +102,18 @@
 
 <div class="container animate-fade-in" id="home">
   
-  <!-- HERO BANNER -->
   <section class="hero-section">
-    <div class="schedule-badge">TER - SÁB | 08H - 19H</div>
+    <div class="schedule-badge" id="displayHorarioTxt">TER - SÁB | 08H - 19H</div>
     <h1 class="hero-title">Barbearia Rafael</h1>
     <p class="hero-subtitle">Barbearia Familiar com Ambiente Climatizado & Atendimento Exclusivo</p>
   </section>
 
-  <!-- AGENDAMENTO -->
   <div id="agendar">
-    
-    <!-- Passo 1: Barbeiro -->
     <div class="step hover-scale">
       <h2>1. Escolha seu Barbeiro</h2>
       <div class="barbeiros-grid" id="barbeirosGrid"></div>
     </div>
 
-    <!-- Passo 2: Serviço -->
     <div class="step hover-scale">
       <h2>2. Escolha o Serviço</h2>
       <select id="servicoSelect">
@@ -140,7 +121,6 @@
       </select>
     </div>
 
-    <!-- Passo 3: Data e Horário -->
     <div class="step hover-scale">
       <h2>3. Data e Horário</h2>
       <label for="dataSelect">Selecione a data:</label>
@@ -152,7 +132,6 @@
       </div>
     </div>
 
-    <!-- Passo 4: Seus Dados -->
     <div class="step hover-scale">
       <h2>4. Seus Dados</h2>
       <input type="text" id="nomeCliente" placeholder="Seu Nome Completo">
@@ -161,7 +140,6 @@
       <button class="submit-btn hover-scale" onclick="confirmarAgendamento()">Confirmar Agendamento</button>
     </div>
 
-    <!-- CAIXA DE CONFIRMAÇÃO -->
     <div class="confirmation-box" id="confirmationBox">
       <h3 style="color: #81c784;">✅ Agendamento Confirmado!</h3>
       <p id="detailsText" style="margin-top: 10px; margin-bottom: 15px; line-height: 1.5;"></p>
@@ -174,35 +152,33 @@
 
   </div>
 
-  <!-- SEÇÃO DE LOCALIZAÇÃO -->
   <section class="section-standard" id="local">
     <h2>📍 Nossa Localização</h2>
-    <p style="text-align: center; color: #aaa; margin-bottom: 10px;">Venha nos visitar e renovar o seu visual!</p>
+    <p id="displayEndereco" style="text-align: center; color: #e0a96d; margin-bottom: 15px; font-weight: bold;">
+      Rua Santo Antônio, 622 - Vila Caiçara - Praia Grande/SP
+    </p>
     <div class="map-wrapper">
       <iframe title="Mapa da Barbearia" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3643.6083656212177!2d-46.5242573!3d-24.0448719!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce21aa1e89ab39%3A0x37b1c0ae3a88122e!2sBarbearia!5e0!3m2!1spt-BR!2sbr!4v1743010781249!5m2!1spt-BR!2sbr" width="100%" height="100%" style="border:0;" loading="lazy"></iframe>
     </div>
   </section>
 
-  <!-- GALERIA DE FOTOS -->
   <section class="section-standard" id="galeria">
     <h2>📸 Galeria do Espaço</h2>
     <div class="gallery-grid">
-      <div class="gallery-item hover-scale"><img src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400" alt="Ambiente da Barbearia"></div>
-      <div class="gallery-item hover-scale"><img src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400" alt="Corte Profissional"></div>
-      <div class="gallery-item hover-scale"><img src="https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=400" alt="Cadeira de Barbeiro"></div>
-      <div class="gallery-item hover-scale"><img src="https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400" alt="Serviço de Barba"></div>
+      <div class="gallery-item hover-scale"><img id="displayFoto1" src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400" alt="Galeria 1"></div>
+      <div class="gallery-item hover-scale"><img id="displayFoto2" src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400" alt="Galeria 2"></div>
+      <div class="gallery-item hover-scale"><img id="displayFoto3" src="https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=400" alt="Galeria 3"></div>
+      <div class="gallery-item hover-scale"><img id="displayFoto4" src="https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400" alt="Galeria 4"></div>
     </div>
   </section>
 
-  <!-- RODAPÉ -->
   <footer>
     <p>© 2026 <strong>Barbearia Rafael</strong>. Todos os direitos reservados.</p>
   </footer>
 
 </div>
 
-<!-- BOTÃO FLUTUANTE DO WHATSAPP -->
-<a href="https://api.whatsapp.com/send/?phone=5513999999999&text=Ol%C3%A1%2C+gostaria+de+tirar+uma+d%C3%BAvida+sobre+o+agendamento%21" target="_blank" class="whatsapp-float hover-scale" aria-label="Abrir WhatsApp">
+<a id="linkWhatsFloat" href="https://api.whatsapp.com/send/?phone=5513999999999" target="_blank" class="whatsapp-float hover-scale" aria-label="Abrir WhatsApp">
   💬
 </a>
 
@@ -213,6 +189,25 @@
   let horarioSelecionado = '';
   const todosHorariosPadrao = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
   const fotoPadrao = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
+
+  // CARREGA AS CONFIGURAÇÕES PERSONALIZADAS DO SITE
+  function aplicarConfiguracoesSite() {
+    const configSite = JSON.parse(localStorage.getItem('configuracoesSite')) || {};
+
+    if (configSite.horarioTxt) {
+      document.getElementById('displayHorarioTxt').innerText = configSite.horarioTxt;
+    }
+    if (configSite.endereco) {
+      document.getElementById('displayEndereco').innerText = configSite.endereco;
+    }
+    if (configSite.whats) {
+      document.getElementById('linkWhatsFloat').href = `https://api.whatsapp.com/send/?phone=${configSite.whats}&text=Ol%C3%A1%2C+gostaria+de+tirar+uma+d%C3%BAvida%21`;
+    }
+    if (configSite.foto1) document.getElementById('displayFoto1').src = configSite.foto1;
+    if (configSite.foto2) document.getElementById('displayFoto2').src = configSite.foto2;
+    if (configSite.foto3) document.getElementById('displayFoto3').src = configSite.foto3;
+    if (configSite.foto4) document.getElementById('displayFoto4').src = configSite.foto4;
+  }
 
   function configurarDataMinima() {
     const hoje = new Date();
@@ -240,7 +235,7 @@
     const dataEscolhida = new Date(ano, mes - 1, dia);
 
     if (dataEscolhida < hoje) {
-      alert('Não é possível agendar em datas passadas. Por favor, escolha a data de hoje ou uma data futura.');
+      alert('Não é possível agendar em datas passadas.');
       inputData.value = '';
       gerarHorarios();
       return;
@@ -249,7 +244,6 @@
     gerarHorarios();
   }
 
-  // 🚀 BUSCA OS BARBEIROS DIRETAMENTE DO BACKEND NO RENDER E USA LOCALSTORAGE COMO FALLBACK
   async function carregarBarbeiros() {
     const grid = document.getElementById('barbeirosGrid');
     grid.innerHTML = '<span style="color: #888; grid-column: 1 / -1;">Carregando barbeiros...</span>';
@@ -262,7 +256,7 @@
         barbeiros = await resposta.json();
       }
     } catch (erro) {
-      console.warn("Servidor offline, tentando ler barbeiros do LocalStorage:", erro);
+      console.warn("Servidor offline, lendo barbeiros do LocalStorage:", erro);
     }
 
     if (!barbeiros || barbeiros.length === 0) {
@@ -312,7 +306,6 @@
     });
   }
 
-  // 📌 BUSCA E BLOQUEIA OS HORÁRIOS OCUPADOS
   async function gerarHorarios() {
     const grid = document.getElementById('slotsGrid');
     const dataVal = document.getElementById('dataSelect').value;
@@ -322,7 +315,6 @@
       return;
     }
 
-    // 1. Valida Dias de Atendimento do Barbeiro
     const partesData = dataVal.split('-');
     const dataObj = new Date(partesData[0], partesData[1] - 1, partesData[2]);
     const diaSemana = dataObj.getDay();
@@ -336,17 +328,14 @@
       return;
     }
 
-    // 2. Horários Liberados pelo Barbeiro
     const configHorarios = JSON.parse(localStorage.getItem('horariosPorBarbeiro')) || {};
     const horariosBarbeiro = configHorarios[barbeiroId] || todosHorariosPadrao;
 
-    // 3. Obter Horários Ocupados no LocalStorage
     const agendamentosLocal = JSON.parse(localStorage.getItem('agendamentos')) || [];
     const ocupadosLocal = agendamentosLocal
       .filter(a => a.data === dataVal && a.barbeiro === barbeiroSelecionadoObj.nome)
       .map(a => a.hora);
 
-    // 4. Obter Horários Ocupados no Backend (Render)
     let ocupadosServer = [];
     try {
       const resp = await fetch(`${URL_BACKEND}/api/horarios-ocupados?data=${dataVal}&barbeiro=${encodeURIComponent(barbeiroSelecionadoObj.nome)}`);
@@ -354,10 +343,9 @@
         ocupadosServer = await resp.json();
       }
     } catch (e) {
-      console.warn("Servidor offline ou indisponível, usando validação local:", e);
+      console.warn("Servidor offline, usando validação local:", e);
     }
 
-    // Une os horários ocupados tanto da API quanto do LocalStorage
     const todosOcupados = [...new Set([...ocupadosLocal, ...ocupadosServer])];
 
     grid.innerHTML = '';
@@ -394,7 +382,6 @@
 
     const [servicoNome, servicoPreco] = servicoValue.split('|');
 
-    // 1. Salva no LocalStorage do navegador
     const agendamentos = JSON.parse(localStorage.getItem('agendamentos')) || [];
     agendamentos.push({
       id: Date.now(),
@@ -408,7 +395,6 @@
     });
     localStorage.setItem('agendamentos', JSON.stringify(agendamentos));
 
-    // 2. EXIBE A TELA DE CONFIRMAÇÃO INSTANTANEAMENTE 🚀
     const dataFormatada = data.split('-').reverse().join('/');
     const box = document.getElementById('confirmationBox');
     document.getElementById('detailsText').innerHTML = `
@@ -419,7 +405,6 @@
       <b>Data/Hora:</b> ${dataFormatada} às ${horarioSelecionado}hs
     `;
 
-    // Configura o botão do Google Agenda
     const [ano, mes, dia] = data.split('-');
     const [hora, min] = horarioSelecionado.split(':');
     const dataInicio = `${ano}${mes}${dia}T${hora}${min}00`;
@@ -434,10 +419,8 @@
     box.style.display = 'block';
     box.scrollIntoView({ behavior: 'smooth' });
 
-    // Atualiza imediatamente a lista de horários na tela para bloquear o recém-agendado
     gerarHorarios();
 
-    // 3. ENVIA O E-MAIL EM SEGUNDO PLANO
     fetch(`${URL_BACKEND}/api/enviar-email-confirmacao`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -450,24 +433,16 @@
         data,
         hora: horarioSelecionado
       })
-    })
-    .then(res => res.json())
-    .then(data => console.log('E-mail disparado em segundo plano:', data))
-    .catch(err => console.warn('Erro em segundo plano ao enviar e-mail:', err));
+    }).catch(err => console.warn('Erro ao enviar e-mail:', err));
   }
 
-  // ⚡ Função de aquecimento do Render ao carregar a página
   async function acordarServidor() {
-    try {
-      await fetch(`${URL_BACKEND}/api/ping`);
-      console.log('⚡ Servidor Render ativo e pronto!');
-    } catch (erro) {
-      console.warn('Iniciando aquecimento do servidor Render...');
-    }
+    try { await fetch(`${URL_BACKEND}/api/ping`); } catch (e) {}
   }
 
   window.addEventListener('DOMContentLoaded', () => {
     acordarServidor();
+    aplicarConfiguracoesSite();
     configurarDataMinima();
     carregarBarbeiros();
   });
