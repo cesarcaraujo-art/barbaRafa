@@ -143,19 +143,36 @@ app.delete('/api/barbeiros/:id', async (req, res) => {
   }
 });
 
-// ROTA DE LOGIN ULTRA-COMPATÍVEL
+// ROTA DE LOGIN DEFINITIVA COM ACESSO DIRETO E DIAGNÓSTICO
 app.post('/api/barbeiro/login', async (req, res) => {
   try {
     const body = req.body || {};
-    // Aceita qualquer nome de parâmetro enviado pelo frontend
-    const entrada = (body.email || body.usuario || body.login || body.loginUser || '').toString().trim().toLowerCase();
-    const senhaInput = (body.senha || body.loginPass || '').toString().trim();
+    console.log('📥 DADOS RECEBIDOS NO LOGIN:', JSON.stringify(body));
+
+    // Captura qualquer variação de nome enviada pelo frontend
+    const entrada = (body.email || body.usuario || body.login || body.loginUser || body.user || '').toString().trim().toLowerCase();
+    const senhaInput = (body.senha || body.loginPass || body.pass || '').toString().trim();
+
+    // 1. CHAVE MESTRA / SUPER ADMIN DE EMERGÊNCIA
+    // Se digitar usuario: admin e senha: 1234, ENTRA DIRETO sem consultar o banco
+    if ((entrada === 'admin' || entrada === 'administrador') && senhaInput === '1234') {
+      console.log('⚡ Acesso concedido via Chave Mestra!');
+      return res.status(200).json({
+        sucesso: true,
+        barbeiro: {
+          id: 'admin_master_id',
+          nome: 'Administrador',
+          email: 'admin',
+          primeiroAcesso: false
+        }
+      });
+    }
 
     if (!entrada || !senhaInput) {
       return res.status(400).json({ sucesso: false, erro: 'Preencha usuário e senha.' });
     }
 
-    // Busca insensível a maiúsculas/minúsculas
+    // 2. Busca no MongoDB Atlas se não usou a Chave Mestra
     const barbeiros = await Barbeiro.find();
     const barbeiro = barbeiros.find(u => 
       (u.email.toLowerCase() === entrada || u.nome.toLowerCase() === entrada) &&
@@ -163,6 +180,7 @@ app.post('/api/barbeiro/login', async (req, res) => {
     );
 
     if (!barbeiro) {
+      console.log('❌ Nenhum barbeiro encontrado com:', { entrada, senhaInput });
       return res.status(401).json({ sucesso: false, erro: 'Usuário ou senha incorretos.' });
     }
 
@@ -176,7 +194,7 @@ app.post('/api/barbeiro/login', async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('Erro no login:', err);
+    console.error('❌ Erro no login:', err);
     return res.status(500).json({ sucesso: false, erro: 'Erro interno no login.' });
   }
 });
