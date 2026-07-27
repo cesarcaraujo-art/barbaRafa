@@ -143,21 +143,22 @@ app.delete('/api/barbeiros/:id', async (req, res) => {
   }
 });
 
-// LOGIN (BUSCA FLEXÍVEL)
+// ROTA DE LOGIN ULTRA-COMPATÍVEL
 app.post('/api/barbeiro/login', async (req, res) => {
   try {
     const body = req.body || {};
-    const loginInput = body.email ? String(body.email).trim().toLowerCase() : '';
-    const senhaInput = body.senha ? String(body.senha).trim() : '';
+    // Aceita qualquer nome de parâmetro enviado pelo frontend
+    const entrada = (body.email || body.usuario || body.login || body.loginUser || '').toString().trim().toLowerCase();
+    const senhaInput = (body.senha || body.loginPass || '').toString().trim();
 
-    if (!loginInput || !senhaInput) {
+    if (!entrada || !senhaInput) {
       return res.status(400).json({ sucesso: false, erro: 'Preencha usuário e senha.' });
     }
 
-    // Busca insensível a maiúsculas/minúsculas no nome e email
+    // Busca insensível a maiúsculas/minúsculas
     const barbeiros = await Barbeiro.find();
     const barbeiro = barbeiros.find(u => 
-      (u.email.toLowerCase() === loginInput || u.nome.toLowerCase() === loginInput) &&
+      (u.email.toLowerCase() === entrada || u.nome.toLowerCase() === entrada) &&
       u.senha === senhaInput
     );
 
