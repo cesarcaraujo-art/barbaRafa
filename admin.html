@@ -120,7 +120,18 @@
     </div>
 
     <div id="horariosTab" class="tab-content" style="display: none;">
-      <label>Selecione os horários que VOCÊ disponibiliza para atendimento:</label>
+      <label for="diaHorarioSelect">Escolha o dia da semana para configurar os horários:</label>
+      <select id="diaHorarioSelect" onchange="renderizarHorariosConfig()">
+        <option value="1">Segunda-feira</option>
+        <option value="2">Terça-feira</option>
+        <option value="3">Quarta-feira</option>
+        <option value="4">Quinta-feira</option>
+        <option value="5">Sexta-feira</option>
+        <option value="6">Sábado</option>
+        <option value="0">Domingo</option>
+      </select>
+
+      <label>Selecione os horários que VOCÊ atende neste dia:</label>
       <div class="checkbox-grid" id="gridHorariosConfig"></div>
     </div>
 
@@ -396,8 +407,17 @@
   }
 
   function renderizarHorariosConfig() {
+    const diaSelecionado = document.getElementById('diaHorarioSelect').value;
     const configHorarios = JSON.parse(localStorage.getItem('horariosPorBarbeiro')) || {};
-    const horariosLiberados = configHorarios[barbeiroAtivoId] || todosHorariosPadrao;
+    const horariosDoBarbeiro = configHorarios[barbeiroAtivoId] || {};
+
+    let horariosLiberados = [];
+    if (Array.isArray(horariosDoBarbeiro)) {
+      horariosLiberados = horariosDoBarbeiro;
+    } else {
+      horariosLiberados = horariosDoBarbeiro[diaSelecionado] || todosHorariosPadrao;
+    }
+
     const container = document.getElementById('gridHorariosConfig');
     container.innerHTML = '';
 
@@ -414,12 +434,19 @@
   }
 
   async function salvarHorariosAtendimento() {
+    const diaSelecionado = document.getElementById('diaHorarioSelect').value;
     const configHorarios = JSON.parse(localStorage.getItem('horariosPorBarbeiro')) || {};
+    
+    if (!configHorarios[barbeiroAtivoId] || Array.isArray(configHorarios[barbeiroAtivoId])) {
+      configHorarios[barbeiroAtivoId] = {};
+    }
+
     const selecionados = [];
     document.querySelectorAll('#gridHorariosConfig input[type="checkbox"]').forEach(chk => {
       if (chk.checked) selecionados.push(chk.value);
     });
-    configHorarios[barbeiroAtivoId] = selecionados;
+
+    configHorarios[barbeiroAtivoId][diaSelecionado] = selecionados;
     saveItem('horariosPorBarbeiro', configHorarios);
     await atualizarNuvem({ horariosPorBarbeiro: configHorarios });
   }
