@@ -66,19 +66,14 @@
   <div id="adminPanel">
     <div class="header-actions">
       <h2>⚙️ Painel de Gestão</h2>
-      <span class="logout-link" onclick="logout()">Sair</span>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <button onclick="abrirModalTrocaSenha()" style="background: #2a2a2a; color: #e0a96d; border: 1px solid #e0a96d; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; width: auto;">
+          🔑 Alterar Senha
+        </button>
+        <span class="logout-link" onclick="logout()">Sair</span>
+      </div>
     </div>
-<!-- SEÇÃO DE ALTERAÇÃO DE SENHA -->
-<div class="card-alterar-senha" style="background: #ffffff; padding: 20px; border-radius: 8px; margin: 20px 0; border-top: 4px solid #e0a96d; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-  <h3 style="margin-top: 0; color: #333; font-size: 1.1rem;">🔒 Alterar Senha de Acesso</h3>
-  <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
-    <input type="password" id="novaSenhaInput" placeholder="Digite a nova senha (mín. 4 caracteres)" style="flex: 1; min-width: 200px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-    <button onclick="executarTrocaSenha()" style="background-color: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">
-      Salvar Nova Senha
-    </button>
-  </div>
-  <p id="msgSenha" style="margin-top: 10px; font-size: 0.9rem; font-weight: bold; display: none;"></p>
-</div>
+
     <!-- SELETOR DO BARBEIRO ATIVO -->
     <div class="barber-selector-bar">
       <label for="barbeiroAtivoSelect">Você está gerenciando o perfil de:</label>
@@ -165,7 +160,23 @@
   </div>
 </div>
 
-<!-- Modal de Troca Obrigatória de Senha -->
+<!-- MODAL DE ALTERAÇÃO MANUAL DE SENHA -->
+<div id="modalTrocaSenha" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center;">
+  <div style="background: #1e1e1e; padding: 25px; border-radius: 10px; max-width: 400px; width: 90%; border-top: 4px solid #e0a96d; color: #fff; position: relative;">
+    <button onclick="fecharModalTrocaSenha()" style="position: absolute; top: 10px; right: 12px; background: transparent; color: #ff5252; border: none; font-size: 1.2rem; cursor: pointer; width: auto; padding: 0;">✖</button>
+    
+    <h3 style="color: #e0a96d; margin-bottom: 15px;">🔑 Alterar Senha</h3>
+    
+    <label style="display: block; margin-bottom: 6px; font-weight: bold; font-size: 0.9rem; color: #ccc;">Nova Senha:</label>
+    <input type="password" id="inputNovaSenhaModal" placeholder="Mínimo 4 caracteres" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #444; background: #2a2a2a; color: #fff; margin-bottom: 15px;">
+
+    <button onclick="salvarSenhaPeloModal()" class="btn-primary" style="width: 100%; padding: 10px;">
+      Salvar Nova Senha
+    </button>
+  </div>
+</div>
+
+<!-- MODAL DE TROCA OBRIGATÓRIA DE SENHA (PRIMEIRO ACESSO) -->
 <div id="modalPrimeiroAcesso" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center;">
   <div style="background: #1e1e1e; padding: 30px; border-radius: 10px; max-width: 400px; width: 90%; border-top: 4px solid #e0a96d; color: #fff;">
     <h2 style="color: #e0a96d; margin-bottom: 10px;">🔒 Primeiro Acesso</h2>
@@ -624,6 +635,52 @@
     }
   }
 
+  // CONTROLE DO MODAL DE ALTERAÇÃO MANUAL DE SENHA
+  function abrirModalTrocaSenha() {
+    document.getElementById('inputNovaSenhaModal').value = '';
+    document.getElementById('modalTrocaSenha').style.display = 'flex';
+  }
+
+  function fecharModalTrocaSenha() {
+    document.getElementById('modalTrocaSenha').style.display = 'none';
+  }
+
+  async function salvarSenhaPeloModal() {
+    const novaSenha = document.getElementById('inputNovaSenhaModal').value.trim();
+
+    if (!novaSenha || novaSenha.length < 4) {
+      alert('A nova senha precisa ter no mínimo 4 caracteres.');
+      return;
+    }
+
+    const barbeiroStr = sessionStorage.getItem('barbeiroLogado');
+    const barbeiro = barbeiroStr ? JSON.parse(barbeiroStr) : {};
+    const idBarbeiro = barbeiro.id || barbeiro._id || 'admin_master_id';
+
+    try {
+      const resp = await fetch(`${URL_BACKEND}/api/barbeiro/alterar-senha`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idBarbeiro: idBarbeiro,
+          novaSenha: novaSenha
+        })
+      });
+
+      const dados = await resp.json();
+
+      if (resp.ok && dados.sucesso) {
+        alert('✅ Senha alterada com sucesso!');
+        fecharModalTrocaSenha();
+      } else {
+        alert(`❌ ${dados.erro || 'Erro ao alterar senha.'}`);
+      }
+    } catch (err) {
+      console.error('Erro ao alterar senha:', err);
+      alert('❌ Erro de conexão com o servidor ao alterar senha.');
+    }
+  }
+
   async function salvarNovaSenha() {
     const barbeiroStr = sessionStorage.getItem('barbeiroLogado');
     if (!barbeiroStr) return alert('Sessão expirada. Faça login novamente.');
@@ -706,50 +763,6 @@
       }
     }
   });
-  async function executarTrocaSenha() {
-  const novaSenha = document.getElementById('novaSenhaInput').value.trim();
-  const msgSenha = document.getElementById('msgSenha');
-
-  if (!novaSenha || novaSenha.length < 4) {
-    msgSenha.style.color = '#dc3545';
-    msgSenha.innerText = '⚠️ A senha deve ter pelo menos 4 caracteres.';
-    msgSenha.style.display = 'block';
-    return;
-  }
-
-  // Recupera as informações do usuário logado salvas no login
-  const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado') || '{}');
-  const idBarbeiro = usuarioLogado.id || 'admin_master_id';
-
-  try {
-    const resp = await fetch(`${URL_BACKEND}/api/barbeiro/alterar-senha`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        idBarbeiro: idBarbeiro,
-        novaSenha: novaSenha
-      })
-    });
-
-    const dados = await resp.json();
-
-    if (resp.ok && dados.sucesso) {
-      msgSenha.style.color = '#28a745';
-      msgSenha.innerText = '✅ Senha alterada com sucesso!';
-      msgSenha.style.display = 'block';
-      document.getElementById('novaSenhaInput').value = '';
-    } else {
-      msgSenha.style.color = '#dc3545';
-      msgSenha.innerText = `❌ ${dados.erro || 'Erro ao alterar senha.'}`;
-      msgSenha.style.display = 'block';
-    }
-  } catch (err) {
-    console.error('Erro ao trocar senha:', err);
-    msgSenha.style.color = '#dc3545';
-    msgSenha.innerText = '❌ Erro ao conectar com o servidor.';
-    msgSenha.style.display = 'block';
-  }
-}
 </script>
 
 </body>
