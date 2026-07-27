@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
   <title>Painel do Barbeiro - Gestão Individual</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -205,7 +210,6 @@
   const todosHorariosPadrao = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
 
   let barbeiroAtivoId = 1;
-  let configGeralNuvem = {};
   let fotosGaleriaMemoria = { foto1: '', foto2: '', foto3: '', foto4: '' };
 
   function getBarbeiros() { return JSON.parse(localStorage.getItem('barbeiros')) || [{ id: 1, nome: 'Carlos Silva', foto: fotoPadrao }]; }
@@ -214,15 +218,15 @@
 
   async function carregarTudoDoBanco() {
     try {
-      const resp = await fetch(`${URL_BACKEND}/api/config-site`);
+      const resp = await fetch(`${URL_BACKEND}/api/config-site?nocache=${Date.now()}`);
       if (resp.ok) {
-        configGeralNuvem = await resp.json();
+        const configGeralNuvem = await resp.json();
         if (configGeralNuvem.diasPorBarbeiro) saveItem('diasAtendimentoPorBarbeiro', configGeralNuvem.diasPorBarbeiro);
         if (configGeralNuvem.horariosPorBarbeiro) saveItem('horariosPorBarbeiro', configGeralNuvem.horariosPorBarbeiro);
         if (configGeralNuvem.servicosPorBarbeiro) saveItem('servicosPorBarbeiro', configGeralNuvem.servicosPorBarbeiro);
       }
     } catch (e) {
-      console.warn("Erro ao buscar dados da nuvem:", e);
+      console.warn("Erro ao carregar do banco:", e);
     }
   }
 
@@ -525,7 +529,7 @@
 
   async function carregarEAtualizarBarbeirosServidor() {
     try {
-      const resp = await fetch(`${URL_BACKEND}/api/barbeiros`);
+      const resp = await fetch(`${URL_BACKEND}/api/barbeiros?nocache=${Date.now()}`);
       if (resp.ok) {
         const barbeiros = await resp.json();
         const listaNormalizada = barbeiros
@@ -603,7 +607,7 @@
 
   async function carregarConfiguracoesSite() {
     try {
-      const resp = await fetch(`${URL_BACKEND}/api/config-site`);
+      const resp = await fetch(`${URL_BACKEND}/api/config-site?nocache=${Date.now()}`);
       if (resp.ok) {
         const configSite = await resp.json();
         document.getElementById('configWhats').value = configSite.whats || '';
@@ -633,7 +637,7 @@
         body: JSON.stringify(objetoParcial)
       });
     } catch (e) {
-      console.warn("Erro ao atualizar nuvem:", e);
+      console.warn("Erro ao salvar na nuvem:", e);
     }
   }
 
