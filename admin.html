@@ -163,6 +163,21 @@
 
     <div id="siteTab" class="tab-content" style="display: none;">
       <div class="admin-card">
+        <label style="color: #e0a96d; font-size: 1.05rem;">🖼️ Foto de Pré-visualização do Link no WhatsApp:</label>
+        <p style="font-size:0.8rem; color:#aaa; margin-bottom:8px;">Foto que aparece quando você cola o link no WhatsApp dos clientes.</p>
+        
+        <div style="text-align: center; margin-bottom: 12px;">
+          <img id="previewShareWhats" src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800" style="width: 100%; max-height: 180px; object-fit: cover; border-radius: 8px; border: 1px solid #555;">
+        </div>
+
+        <label class="custom-file-btn" for="fileShareWhats">📷 Escolher Imagem do Dispositivo</label>
+        <input type="file" id="fileShareWhats" accept="image/*" onchange="carregarFotoShareWhats(this)">
+        
+        <label style="margin-top: 10px;">Ou Cole o Link da Imagem na Web:</label>
+        <input type="text" id="configShareWhatsUrl" placeholder="https://exemplo.com/sua-foto.jpg">
+
+        <hr style="border: 0; border-top: 1px solid #333; margin: 20px 0;">
+
         <label>📱 WhatsApp para Contato (com DDD, apenas números):</label>
         <input type="text" id="configWhats" placeholder="Ex: 5513999999999">
 
@@ -172,7 +187,7 @@
         <label>📍 Endereço Completo:</label>
         <input type="text" id="configEndereco" placeholder="Ex: Rua Santo Antônio, 622 - Praia Grande/SP">
 
-        <label style="margin-top: 15px; color: #e0a96d;">📸 Galeria de Fotos (Salva na Nuvem):</label>
+        <label style="margin-top: 15px; color: #e0a96d;">📸 Galeria de Fotos do Espaço:</label>
         
         <div class="gallery-upload-grid">
           <div class="gallery-upload-card">
@@ -222,6 +237,7 @@
 
   let barbeiroAtivoId = 1;
   let fotosGaleriaMemoria = { foto1: '', foto2: '', foto3: '', foto4: '' };
+  let fotoShareWhatsMemoria = '';
 
   function getBarbeiros() { return JSON.parse(localStorage.getItem('barbeiros')) || [{ id: 1, nome: 'Carlos Silva', foto: fotoPadrao }]; }
   function saveItem(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
@@ -524,6 +540,15 @@
     });
   }
 
+  async function carregarFotoShareWhats(input) {
+    if (input.files && input.files[0]) {
+      const base64 = await converterBase64(input.files[0]);
+      fotoShareWhatsMemoria = base64;
+      document.getElementById('previewShareWhats').src = base64;
+      document.getElementById('configShareWhatsUrl').value = '';
+    }
+  }
+
   async function adicionarBarbeiro() {
     const nome = document.getElementById('newNome').value;
     const fileInput = document.getElementById('newFotoFile');
@@ -666,6 +691,14 @@
         document.getElementById('configHorarioTxt').value = configSite.horarioTxt || '';
         document.getElementById('configEndereco').value = configSite.endereco || '';
 
+        fotoShareWhatsMemoria = configSite.fotoShareWhatsapp || '';
+        if (configSite.fotoShareWhatsapp) {
+          document.getElementById('previewShareWhats').src = configSite.fotoShareWhatsapp;
+          if (configSite.fotoShareWhatsapp.startsWith('http')) {
+            document.getElementById('configShareWhatsUrl').value = configSite.fotoShareWhatsapp;
+          }
+        }
+
         fotosGaleriaMemoria.foto1 = configSite.foto1 || '';
         fotosGaleriaMemoria.foto2 = configSite.foto2 || '';
         fotosGaleriaMemoria.foto3 = configSite.foto3 || '';
@@ -698,10 +731,14 @@
     btn.innerText = 'Salvando na Nuvem...';
     btn.disabled = true;
 
+    const urlInserida = document.getElementById('configShareWhatsUrl').value.trim();
+    const fotoWhatsappFinal = urlInserida || fotoShareWhatsMemoria;
+
     const payload = {
       whats: document.getElementById('configWhats').value.trim(),
       horarioTxt: document.getElementById('configHorarioTxt').value.trim(),
       endereco: document.getElementById('configEndereco').value.trim(),
+      fotoShareWhatsapp: fotoWhatsappFinal,
       foto1: fotosGaleriaMemoria.foto1,
       foto2: fotosGaleriaMemoria.foto2,
       foto3: fotosGaleriaMemoria.foto3,
@@ -717,7 +754,7 @@
 
       const dados = await resp.json();
       if (dados.sucesso) {
-        alert('✅ Configurações e fotos salvas com sucesso no MongoDB Atlas!');
+        alert('✅ Configurações e foto do WhatsApp salvas com sucesso no MongoDB Atlas!');
       } else {
         alert('❌ Erro ao salvar configurações no banco.');
       }
