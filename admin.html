@@ -163,18 +163,26 @@
 
     <div id="siteTab" class="tab-content" style="display: none;">
       <div class="admin-card">
-        <label style="color: #e0a96d; font-size: 1.05rem;">🖼️ Foto de Pré-visualização do Link no WhatsApp:</label>
-        <p style="font-size:0.8rem; color:#aaa; margin-bottom:8px;">Foto que aparece quando você cola o link no WhatsApp dos clientes.</p>
+        <label style="color: #e0a96d; font-size: 1.05rem;">🖼️ Foto do Link no WhatsApp & Enquadramento:</label>
+        <p style="font-size:0.8rem; color:#aaa; margin-bottom:8px;">Ajuste como a imagem será cortada para exibir todo o logo da barbearia.</p>
         
-        <div style="text-align: center; margin-bottom: 12px;">
-          <img id="previewShareWhats" src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800" style="width: 100%; max-height: 180px; object-fit: cover; border-radius: 8px; border: 1px solid #555;">
+        <div style="text-align: center; margin-bottom: 12px; background: #000; padding: 10px; border-radius: 8px;">
+          <img id="previewShareWhats" src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800" style="width: 100%; max-height: 200px; object-fit: cover; object-position: center; border-radius: 6px; border: 1px solid #555;">
         </div>
 
-        <label class="custom-file-btn" for="fileShareWhats">📷 Escolher Imagem do Dispositivo</label>
+        <label style="font-size: 0.85rem; color: #ccc;">Ajuste de Enquadramento / Modo de Exibição:</label>
+        <select id="configEnquadramentoSelect" onchange="atualizarEnquadramentoPreview(this.value)">
+          <option value="cover-center">🎯 Preencher tudo - Centralizado (Padrão)</option>
+          <option value="contain">🖼️ Mostrar imagem INTEIRA sem cortes (Recomendado para Logos)</option>
+          <option value="cover-top">⬆️ Preencher alinhando no TOPO</option>
+          <option value="cover-bottom">⬇️ Preencher alinhando na BASE</option>
+        </select>
+
+        <label class="custom-file-btn" for="fileShareWhats" style="margin-top:5px;">📷 Escolher Foto / Logo do Dispositivo</label>
         <input type="file" id="fileShareWhats" accept="image/*" onchange="carregarFotoShareWhats(this)">
         
         <label style="margin-top: 10px;">Ou Cole o Link da Imagem na Web:</label>
-        <input type="text" id="configShareWhatsUrl" placeholder="https://exemplo.com/sua-foto.jpg">
+        <input type="text" id="configShareWhatsUrl" placeholder="https://exemplo.com/seu-logo.jpg">
 
         <hr style="border: 0; border-top: 1px solid #333; margin: 20px 0;">
 
@@ -540,6 +548,25 @@
     });
   }
 
+  function atualizarEnquadramentoPreview(modo) {
+    const img = document.getElementById('previewShareWhats');
+    if (!img) return;
+
+    if (modo === 'contain') {
+      img.style.objectFit = 'contain';
+      img.style.objectPosition = 'center';
+    } else if (modo === 'cover-top') {
+      img.style.objectFit = 'cover';
+      img.style.objectPosition = 'top';
+    } else if (modo === 'cover-bottom') {
+      img.style.objectFit = 'cover';
+      img.style.objectPosition = 'bottom';
+    } else {
+      img.style.objectFit = 'cover';
+      img.style.objectPosition = 'center';
+    }
+  }
+
   async function carregarFotoShareWhats(input) {
     if (input.files && input.files[0]) {
       const base64 = await converterBase64(input.files[0]);
@@ -699,6 +726,11 @@
           }
         }
 
+        if (configSite.enquadramentoWhatsapp) {
+          document.getElementById('configEnquadramentoSelect').value = configSite.enquadramentoWhatsapp;
+          atualizarEnquadramentoPreview(configSite.enquadramentoWhatsapp);
+        }
+
         fotosGaleriaMemoria.foto1 = configSite.foto1 || '';
         fotosGaleriaMemoria.foto2 = configSite.foto2 || '';
         fotosGaleriaMemoria.foto3 = configSite.foto3 || '';
@@ -733,12 +765,14 @@
 
     const urlInserida = document.getElementById('configShareWhatsUrl').value.trim();
     const fotoWhatsappFinal = urlInserida || fotoShareWhatsMemoria;
+    const enquadramento = document.getElementById('configEnquadramentoSelect').value;
 
     const payload = {
       whats: document.getElementById('configWhats').value.trim(),
       horarioTxt: document.getElementById('configHorarioTxt').value.trim(),
       endereco: document.getElementById('configEndereco').value.trim(),
       fotoShareWhatsapp: fotoWhatsappFinal,
+      enquadramentoWhatsapp: enquadramento,
       foto1: fotosGaleriaMemoria.foto1,
       foto2: fotosGaleriaMemoria.foto2,
       foto3: fotosGaleriaMemoria.foto3,
@@ -754,7 +788,7 @@
 
       const dados = await resp.json();
       if (dados.sucesso) {
-        alert('✅ Configurações e foto do WhatsApp salvas com sucesso no MongoDB Atlas!');
+        alert('✅ Configurações e enquadramento salvos com sucesso no MongoDB Atlas!');
       } else {
         alert('❌ Erro ao salvar configurações no banco.');
       }
