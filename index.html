@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <!-- DESATIVADOR DE CACHE DO NAVEGADOR E CELULARES -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
@@ -20,7 +19,6 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     html { scroll-behavior: smooth; }
     
-    /* IMPEDE A SELEÇÃO DE TEXTO E ARRASTE DE IMAGENS */
     body {
       background-color: #121212;
       color: #f5f5f5;
@@ -365,11 +363,6 @@
     const configHorarios = JSON.parse(localStorage.getItem('horariosPorBarbeiro')) || {};
     const horariosBarbeiro = configHorarios[barbeiroId] || todosHorariosPadrao;
 
-    const agendamentosLocal = JSON.parse(localStorage.getItem('agendamentos')) || [];
-    const ocupadosLocal = agendamentosLocal
-      .filter(a => a.data === dataVal && a.barbeiro === barbeiroSelecionadoObj.nome)
-      .map(a => a.hora);
-
     let ocupadosServer = [];
     try {
       const resp = await fetch(`${URL_BACKEND}/api/horarios-ocupados?data=${dataVal}&barbeiro=${encodeURIComponent(barbeiroSelecionadoObj.nome)}&nocache=${Date.now()}`);
@@ -380,14 +373,12 @@
       console.warn("Servidor offline, usando validação local:", e);
     }
 
-    const todosOcupados = [...new Set([...ocupadosLocal, ...ocupadosServer])];
-
     grid.innerHTML = '';
     horariosBarbeiro.forEach(h => {
       const btn = document.createElement('button');
       btn.className = 'slot-btn';
       
-      if (todosOcupados.includes(h)) {
+      if (ocupadosServer.includes(h)) {
         btn.innerText = `${h} (Ocupado)`;
         btn.disabled = true;
         btn.classList.add('ocupado');
@@ -415,22 +406,9 @@
     }
 
     const [servicoNome, servicoPreco] = servicoValue.split('|');
-
-    const agendamentos = JSON.parse(localStorage.getItem('agendamentos')) || [];
-    agendamentos.push({
-      id: Date.now(),
-      cliente: nome,
-      barbeiro: barbeiroSelecionadoObj.nome,
-      servico: servicoNome,
-      preco: servicoPreco,
-      data: data,
-      hora: horarioSelecionado,
-      email: email
-    });
-    localStorage.setItem('agendamentos', JSON.stringify(agendamentos));
-
     const dataFormatada = data.split('-').reverse().join('/');
     const box = document.getElementById('confirmationBox');
+
     document.getElementById('detailsText').innerHTML = `
       <b>Cliente:</b> ${nome}<br>
       <b>E-mail:</b> ${email}<br>
@@ -453,8 +431,6 @@
     box.style.display = 'block';
     box.scrollIntoView({ behavior: 'smooth' });
 
-    gerarHorarios();
-
     fetch(`${URL_BACKEND}/api/enviar-email-confirmacao`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -467,7 +443,9 @@
         data,
         hora: horarioSelecionado
       })
-    }).catch(err => console.warn('Erro ao enviar e-mail:', err));
+    })
+    .then(() => gerarHorarios())
+    .catch(err => console.warn('Erro ao salvar agendamento:', err));
   }
 
   async function acordarServidor() {
