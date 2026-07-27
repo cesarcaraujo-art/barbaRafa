@@ -143,44 +143,40 @@ app.delete('/api/barbeiros/:id', async (req, res) => {
   }
 });
 
-// ROTA DE LOGIN DEFINITIVA COM ACESSO DIRETO E DIAGNÓSTICO
+// 🚀 ROTA DE LOGIN DEFINITIVA (RESPEITA A SENHA ALTERADA NO BANCO)
 app.post('/api/barbeiro/login', async (req, res) => {
   try {
     const body = req.body || {};
-    console.log('📥 DADOS RECEBIDOS NO LOGIN:', JSON.stringify(body));
 
-    // Captura qualquer variação de nome enviada pelo frontend
     const entrada = (body.email || body.usuario || body.login || body.loginUser || body.user || '').toString().trim().toLowerCase();
     const senhaInput = (body.senha || body.loginPass || body.pass || '').toString().trim();
-
-    // 1. CHAVE MESTRA / SUPER ADMIN DE EMERGÊNCIA
-    // Se digitar usuario: admin e senha: 1234, ENTRA DIRETO sem consultar o banco
-    if ((entrada === 'admin' || entrada === 'administrador') && senhaInput === '1234') {
-      console.log('⚡ Acesso concedido via Chave Mestra!');
-      return res.status(200).json({
-        sucesso: true,
-        barbeiro: {
-          id: 'admin_master_id',
-          nome: 'Administrador',
-          email: 'admin',
-          primeiroAcesso: false
-        }
-      });
-    }
 
     if (!entrada || !senhaInput) {
       return res.status(400).json({ sucesso: false, erro: 'Preencha usuário e senha.' });
     }
 
-    // 2. Busca no MongoDB Atlas se não usou a Chave Mestra
+    // 1. Consulta no MongoDB Atlas validando a entrada e a senha
     const barbeiros = await Barbeiro.find();
-    const barbeiro = barbeiros.find(u => 
+    let barbeiro = barbeiros.find(u => 
       (u.email.toLowerCase() === entrada || u.nome.toLowerCase() === entrada) &&
       u.senha === senhaInput
     );
 
+    // 2. Se o admin ainda não foi cadastrado no banco e for a primeira tentativa com 1234
+    if (!barbeiro && (entrada === 'admin' || entrada === 'administrador') && senhaInput === '1234') {
+      const adminExistente = await Barbeiro.findOne({ email: 'admin' });
+      if (!adminExistente) {
+        barbeiro = await Barbeiro.create({
+          nome: 'Administrador',
+          email: 'admin',
+          senha: '1234',
+          foto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+          primeiroAcesso: false
+        });
+      }
+    }
+
     if (!barbeiro) {
-      console.log('❌ Nenhum barbeiro encontrado com:', { entrada, senhaInput });
       return res.status(401).json({ sucesso: false, erro: 'Usuário ou senha incorretos.' });
     }
 
@@ -215,7 +211,7 @@ app.post('/api/barbeiro/alterar-senha', async (req, res) => {
       barbeiro = await Barbeiro.findById(idBarbeiro);
     }
 
-    // 2. Se não encontrou (ex: veio 'admin_master_id'), busca pelo e-mail ou nome do admin
+    // 2. Se não encontrou por ID, busca pelo e-mail ou nome do admin
     if (!barbeiro) {
       barbeiro = await Barbeiro.findOne({
         $or: [
@@ -225,7 +221,7 @@ app.post('/api/barbeiro/alterar-senha', async (req, res) => {
       });
     }
 
-    // 3. Se o admin ainda não existia fisicamente no MongoDB, cria agora com a nova senha
+    // 3. Se o admin ainda não existia no MongoDB, cria com a nova senha
     if (!barbeiro) {
       barbeiro = new Barbeiro({
         nome: 'Administrador',
