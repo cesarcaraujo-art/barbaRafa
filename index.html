@@ -190,23 +190,26 @@
   const todosHorariosPadrao = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
   const fotoPadrao = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
 
-  // CARREGA AS CONFIGURAÇÕES PERSONALIZADAS DO SITE
-  function aplicarConfiguracoesSite() {
-    const configSite = JSON.parse(localStorage.getItem('configuracoesSite')) || {};
+  // BUSCA AS CONFIGURAÇÕES E FOTOS DO SITE DIRETO NO MONGODB ATLAS
+  async function aplicarConfiguracoesSite() {
+    try {
+      const resp = await fetch(`${URL_BACKEND}/api/config-site`);
+      if (resp.ok) {
+        const configSite = await resp.json();
 
-    if (configSite.horarioTxt) {
-      document.getElementById('displayHorarioTxt').innerText = configSite.horarioTxt;
+        if (configSite.horarioTxt) document.getElementById('displayHorarioTxt').innerText = configSite.horarioTxt;
+        if (configSite.endereco) document.getElementById('displayEndereco').innerText = configSite.endereco;
+        if (configSite.whats) {
+          document.getElementById('linkWhatsFloat').href = `https://api.whatsapp.com/send/?phone=${configSite.whats}&text=Ol%C3%A1%2C+gostaria+de+tirar+uma+d%C3%BAvida%21`;
+        }
+        if (configSite.foto1) document.getElementById('displayFoto1').src = configSite.foto1;
+        if (configSite.foto2) document.getElementById('displayFoto2').src = configSite.foto2;
+        if (configSite.foto3) document.getElementById('displayFoto3').src = configSite.foto3;
+        if (configSite.foto4) document.getElementById('displayFoto4').src = configSite.foto4;
+      }
+    } catch (e) {
+      console.warn("Servidor offline, mantendo exibição padrão:", e);
     }
-    if (configSite.endereco) {
-      document.getElementById('displayEndereco').innerText = configSite.endereco;
-    }
-    if (configSite.whats) {
-      document.getElementById('linkWhatsFloat').href = `https://api.whatsapp.com/send/?phone=${configSite.whats}&text=Ol%C3%A1%2C+gostaria+de+tirar+uma+d%C3%BAvida%21`;
-    }
-    if (configSite.foto1) document.getElementById('displayFoto1').src = configSite.foto1;
-    if (configSite.foto2) document.getElementById('displayFoto2').src = configSite.foto2;
-    if (configSite.foto3) document.getElementById('displayFoto3').src = configSite.foto3;
-    if (configSite.foto4) document.getElementById('displayFoto4').src = configSite.foto4;
   }
 
   function configurarDataMinima() {
@@ -214,18 +217,16 @@
     const ano = hoje.getFullYear();
     const mes = String(hoje.getMonth() + 1).padStart(2, '0');
     const dia = String(hoje.getDate()).padStart(2, '0');
-    const dataHojeStr = `${ano}-${mes}-${dia}`;
 
     const inputData = document.getElementById('dataSelect');
     if (inputData) {
-      inputData.setAttribute('min', dataHojeStr);
+      inputData.setAttribute('min', `${ano}-${mes}-${dia}`);
     }
   }
 
   function validarDataSelecionada() {
     const inputData = document.getElementById('dataSelect');
     const dataVal = inputData.value;
-
     if (!dataVal) return;
 
     const hoje = new Date();
