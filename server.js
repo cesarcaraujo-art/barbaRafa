@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const { Resend } = require('resend');
+const { google } = require('googleapis');
 const cors = require('cors');
 const path = require('path');
 
@@ -104,7 +105,7 @@ app.put('/api/config-site', async (req, res) => {
   }
 });
 
-// LISTAR BARBEIROS REAIS
+// LISTAR BARBEIROS
 app.get('/api/barbeiros', async (req, res) => {
   try {
     const barbeiros = await Barbeiro.find({ email: { $ne: 'admin' } }, 'nome foto email primeiroAcesso');
@@ -290,7 +291,7 @@ app.get('/api/horarios-ocupados', async (req, res) => {
   return res.status(200).json(agendamentos.map(a => a.hora));
 });
 
-// ROTA DE ENVIO DE E-MAIL E CONVITE AUTOMÁTICO (ICS / GOOGLE CALENDAR)
+// ROTA DE AGENDAMENTO COM INSERÇÃO AUTOMÁTICA NA GOOGLE AGENDA VIA API
 app.post('/api/enviar-email-confirmacao', async (req, res) => {
   const { nome, email, barbeiro, servico, preco, data, hora, whats } = req.body || {};
 
@@ -309,94 +310,63 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
     const dataFormatada = data ? data.split('-').reverse().join('/') : data;
     const precoFormatado = parseFloat(preco || 0).toFixed(2).replace('.', ',');
 
-    if (barbeiro) {
-      const [ano, mes, dia] = data.split('-');
-      const [horaStr, minStr] = hora.split(':');
-      
-      const dataInicioStr = `${ano}${mes}${dia}T${horaStr}${minStr}00`;
-      
-      const horaFimNum = parseInt(horaStr) + 1;
-      const horaFimStr = (horaFimNum < 10 ? '0' : '') + horaFimNum + minStr + '00';
-      const dataFimStr = `${ano}${mes}${dia}T${horaFimStr}`;
+    // 1. ADICIONAR AUTOMATICAMENTE NA GOOGLE AGENDA (SE AS CREDENCIAIS ESTIVEREM CONFIGURADAS)
+    if (process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
+      try {
+        const auth = new google.auth.JWT(
+          process.env.GOOGLE_CLIENT_EMAIL,
+          null,
+          process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+          ['https://www.googleapis.com/auth/calendar']
+        );
 
-      // Conteúdo estruturado iCal otimizado para auto-adição no Google Agenda
-      const conteudoIcs = [
-        'BEGIN:VCALENDAR',
-        'VERSION:2.0',
-        'PRODID:-//Barbearia Rafael//Agendamento Online//PT',
-        'METHOD:REQUEST',
-        'BEGIN:VEVENT',
-        `UID:agendamento-${Date.now()}@barbariarafael.com`,
-        `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
-        `DTSTART:${dataInicioStr}`,
-        `DTEND:${dataFimStr}`,
-        `SUMMARY:✂️ ${servico} - ${nome} (${barbeiro})`,
-        `DESCRIPTION:Cliente: ${nome}\\nWhatsApp: ${whats}\\nServiço: ${servico}\\nProfissional: ${barbeiro}\\nValor: R$ ${precoFormatado}`,
-        `LOCATION:Rua Santo Antônio, 622 - Vila Caiçara - Praia Grande/SP`,
-        `ORGANIZER;CN=Barbearia Rafael:mailto:barbarafa100@gmail.com`,
-        `ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN=Admin:mailto:barbarafa100@gmail.com`,
-        'STATUS:CONFIRMED',
-        'END:VEVENT',
-        'END:VCALENDAR'
-      ].join('\r\n');
+        const calendar = google.calendar({ version: 'v3', auth });
 
-      // 1. Enviar para o Administrador (auto-adiciona na Google Agenda via anexo iCal)
+        // Montar horários de início e fim (duração de 1 hora)
+        const [ano, mes, dia] = data.split('-');
+        const [horaStr, minStr] = hora.split(':');
+        const dataInicioIso = `${ano}-${mes}-${dia}T${horaStr}:${minStr}:00-03:00`;
+        
+        const horaFimNum = parseInt(horaStr) + 1;
+        const horaFimStr = (horaFimNum < 10 ? '0' : '') + horaFimNum + ':' + minStr;
+        const dataFimIso = `${ano}-${mes}-${dia}T${horaFimStr}:00-03:00`;
+
+        await calendar.events.insert({
+          calendarId: 'barbarafa100@gmail.com',
+          resource: {
+            summary: `✂️ ${servico} - ${nome} (${barbeiro})`,
+            description: `Cliente: ${nome}\nWhatsApp: ${whats}\nServiço: ${servico}\nProfissional: ${barbeiro}\nValor: R$ ${precoFormatado}`,
+            location: 'Rua Santo Antônio, 622 - Vila Caiçara - Praia Grande/SP',
+            start: { dateTime: dataInicioIso },
+            end: { dateTime: dataFimIso },
+          },
+        });
+        console.log('✅ Evento inserido automaticamente na Google Agenda com sucesso!');
+      } catch (calErr) {
+        console.error('⚠️ Erro ao inserir na Google Agenda via API:', calErr.message);
+      }
+    }
+
+    // 2. ENVIAR E-MAIL PARA O CLIENTE
+    if (email) {
       await resend.emails.send({
         from: 'Barbearia Rafael <onboarding@resend.dev>',
-        to: ['barbarafa100@gmail.com'],
-        subject: `📅 Novo Agendamento: ${nome} com ${barbeiro} (${dataFormatada} às ${hora})`,
+        to: [email],
+        subject: '✂️ Confirmação de Agendamento - Barbearia Rafael',
         html: `
           <div style="font-family: Arial, sans-serif; background-color: #121212; color: #ffffff; padding: 20px; border-radius: 8px;">
-            <h2 style="color: #e0a96d; text-align: center;">Novo Agendamento Confirmado!</h2>
-            <p style="font-size: 1rem; text-align: center;">O compromisso foi gerado e enviado para integração automática na sua agenda.</p>
+            <h2 style="color: #e0a96d; text-align: center;">Olá, ${nome}!</h2>
+            <p style="font-size: 1rem; text-align: center;">Seu agendamento foi realizado com sucesso.</p>
             
             <div style="background-color: #1e1e1e; padding: 15px; border-radius: 6px; border-left: 4px solid #e0a96d; margin: 20px 0;">
-              <p style="margin: 5px 0;">👤 <b>Cliente:</b> ${nome}</p>
-              <p style="margin: 5px 0;">📱 <b>WhatsApp:</b> ${whats}</p>
               <p style="margin: 5px 0;">💈 <b>Profissional:</b> ${barbeiro}</p>
               <p style="margin: 5px 0;">✂️ <b>Serviço:</b> ${servico} (R$ ${precoFormatado})</p>
               <p style="margin: 5px 0;">📅 <b>Data:</b> ${dataFormatada}</p>
               <p style="margin: 5px 0;">⏰ <b>Horário:</b> ${hora} hs</p>
             </div>
           </div>
-        `,
-        attachments: [
-          {
-            filename: 'invite.ics',
-            content: Buffer.from(conteudoIcs).toString('base64'),
-            contentType: 'text/calendar; method=REQUEST'
-          }
-        ]
+        `
       });
-
-      // 2. Enviar para o CLIENTE (se ele informou e-mail)
-      if (email) {
-        await resend.emails.send({
-          from: 'Barbearia Rafael <onboarding@resend.dev>',
-          to: [email],
-          subject: '✂️ Confirmação de Agendamento - Barbearia Rafael',
-          html: `
-            <div style="font-family: Arial, sans-serif; background-color: #121212; color: #ffffff; padding: 20px; border-radius: 8px;">
-              <h2 style="color: #e0a96d; text-align: center;">Olá, ${nome}!</h2>
-              <p style="font-size: 1rem; text-align: center;">Seu agendamento foi realizado com sucesso. O convite para a sua agenda está anexado.</p>
-              
-              <div style="background-color: #1e1e1e; padding: 15px; border-radius: 6px; border-left: 4px solid #e0a96d; margin: 20px 0;">
-                <p style="margin: 5px 0;">💈 <b>Profissional:</b> ${barbeiro}</p>
-                <p style="margin: 5px 0;">✂️ <b>Serviço:</b> ${servico} (R$ ${precoFormatado})</p>
-                <p style="margin: 5px 0;">📅 <b>Data:</b> ${dataFormatada}</p>
-                <p style="margin: 5px 0;">⏰ <b>Horário:</b> ${hora} hs</p>
-              </div>
-            </div>
-          `,
-          attachments: [
-            {
-              filename: 'convite-barbearia.ics',
-              content: Buffer.from(conteudoIcs).toString('base64'),
-              contentType: 'text/calendar'
-            }
-          ]
-        });
-      }
     }
 
     return res.status(200).json({ sucesso: true, agendamento: novoAgendamento });
