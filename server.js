@@ -2,12 +2,21 @@ const express = require('express');
 const mongoose = require('mongoose');
 const { Resend } = require('resend');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ limit: '20mb', extended: true }));
+
+// Servir arquivos estáticos (HTML, CSS, JS do front-end que estão na raiz)
+app.use(express.static(path.join(__dirname)));
+
+// Rota raiz para carregar o index.html principal
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_123456');
 
