@@ -310,14 +310,11 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
     const dataFormatada = data ? data.split('-').reverse().join('/') : data;
     const precoFormatado = parseFloat(preco || 0).toFixed(2).replace('.', ',');
 
-    // 1. ADICIONAR AUTOMATICAMENTE NA GOOGLE AGENDA COM CORREÇÃO DA CHAVE PRIVADA
+    // 1. ADICIONAR AUTOMATICAMENTE NA GOOGLE AGENDA COM LIMPEZA ROBUSTA DA CHAVE
     if (process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
       try {
-        let privateKey = process.env.GOOGLE_PRIVATE_KEY;
-        if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
-          privateKey = privateKey.slice(1, -1);
-        }
-        privateKey = privateKey.replace(/\\n/g, '\n');
+        let privateKey = process.env.GOOGLE_PRIVATE_KEY || '';
+        privateKey = privateKey.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n');
 
         const auth = new google.auth.JWT(
           process.env.GOOGLE_CLIENT_EMAIL,
