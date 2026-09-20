@@ -228,7 +228,7 @@ app.get('/api/horarios-ocupados', async (req, res) => {
   return res.status(200).json(agendamentos.map(a => a.hora));
 });
 
-// ROTA DE AGENDAMENTO COM SUPORTE A CHAVE EM BASE64
+// ROTA DE AGENDAMENTO COM CHAVE BLINDADA DIRETAMENTE NO CÓDIGO
 app.post('/api/enviar-email-confirmacao', async (req, res) => {
   const { nome, email, barbeiro, servico, preco, data, hora, whats } = req.body || {};
 
@@ -241,27 +241,39 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
     const dataFormatada = data ? data.split('-').reverse().join('/') : data;
     const precoFormatado = parseFloat(preco || 0).toFixed(2).replace('.', ',');
 
-    // 1. ADICIONAR AUTOMATICAMENTE NA GOOGLE AGENDA (LEITURA DIRETA SEGURA)
-    if (process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
+    // 1. ADICIONAR AUTOMATICAMENTE NA GOOGLE AGENDA
+    if (process.env.GOOGLE_CLIENT_EMAIL) {
       try {
-        let rawKey = process.env.GOOGLE_PRIVATE_KEY.trim();
-        // Remove aspas caso tenham sido adicionadas por engano no Render
-        if (rawKey.startsWith('"') && rawKey.endsWith('"')) {
-          rawKey = rawKey.slice(1, -1);
-        }
-        
-        // Se a chave ainda estiver em Base64, decodifica para texto normal
-        let privateKey = rawKey;
-        if (!rawKey.includes('-----BEGIN PRIVATE KEY-----')) {
-          try {
-            privateKey = Buffer.from(rawKey, 'base64').toString('utf8');
-          } catch (e) {
-            privateKey = rawKey;
-          }
-        }
-        
-        // Normaliza as quebras de linha reais
-        privateKey = privateKey.replace(/\\n/g, '\n');
+        const privateKey = [
+          "-----BEGIN PRIVATE KEY-----",
+          "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCTiu2JqvpW3XWx",
+          "e1WjnuKwab4NLsAKZHvkcLwK1yKVL1oT96uLl3peabaH0eYCR/jFmDFGBbLnoSE8",
+          "8OJ99Opm21MLbiKQGYPKhUxY3dzzZ7G++nY152IZmWYM0JiQIpeEWyeH4lUetyEa",
+          "reOAWpwvo46x3UJfsOYu3YYnk+ExSc7Nrb/GBapVvKpdxwRZwVIa5uZoupc2IixE",
+          "Sc0YKnd7T/hzwPq4cpPgbXYZSQnIIGRUWcs5oPbTwjiHt4ZDcEO+eKLLyiEGNYIi",
+          "HTpv3gMSdVh8+MfUwn7bC1RYzS1HWP32A8p+Ly6a9vpMJOW8FlLNoXK03eTy4UPV",
+          "5igeFeeZAgMBAAECggEACIqq2xUeElyWmVhysirrBIvQpAZ8eXWNCyIALu/6yXCA",
+          "+mY0pRuXSuM7nSQYmPH1++mGU7+Vdo24ZQTsld5xmhQRPBiLkXRasgUy0PPCPIi4",
+          "rH3nTVJYlnMQKoaCiJiqFTBqStZ+d01ikh72TGpif6sMQi2VL8FH6DdssnqgF0hw",
+          "OtrefqAXpEhleY7GFw1Yh/gdo4d6utsFWb58h3agAoIFp0QNCdXC6x8f6B3+xDLL",
+          "HWXXIsFkhxPlOwQTytRxAzBd4ZIKr75Df43NTD+LeKhK/2kb1KXE3wXaCY9/qNMY",
+          "NxfyV4yp0eRgjAG6AiRN3Ot+ymCJU5UOUu4UJLSzMQKBgQDDMjyQemLcIKCQ+Fh4",
+          "TQqFWkvyguCvZ2pp6otEgABVkn8oV1PR4Si71KPT2g13qn3qRev7hZZpjP4bA+x+",
+          "rac0teKtSRzCVX5/4+ktOSNt5ZD/J5w5fAXaa1XPbteLKJZcedFV80hLfcWD0gfr",
+          "B+/zBmn8CA16M+L7GraQfURWqQKBgQDBgJkhXNo926NqTrxbxI5paUb3mVzlD4ik",
+          "EA7kXFbvqJiqLAQEOCrh1DzgE/BN6b59lfWbPJzQS7SImZuxjiDZ9RpNVJk6kroD",
+          "Cic1Q48sq/etiLwfkqWmVMoNWYXzeHCQfHbpIr+6Yc7hfPiEiLoa+YB4xFK8Om8l",
+          "o0x3NrHPcQKBgQCAhkN6nhsZ9iHDUsJt88xJofr/400uMVnQA69PmzidH6i6V0XJ",
+          "nAfGJWz5wUm80XW3G/MV2g//z+ZAw4SkpJLEEj7++nUFQGXar6aJMGYzpkSivOIQ",
+          "t6ji+Gm3+7PQ3RikK1G61kVz74xuD41HJCLKUh7W5DZ7kE6UKDKtUM3+gQKBgExG",
+          "zxYxre34aKB9TQ63mpO+5jSwBchdqTVTByvJopNyWEusciDfqze+HAkQkweDfo2u",
+          "0VRSPlZ1oUK/mnoRVq3USnv1PzmxoRWVqQL8ELJBT67eWZnwis/YWJWOlpj0/xpV",
+          "leIsyntEFvMX+jb0VrhPZe81JJACUNH7XycXLlxhAoGAWDTWD9egLeqUFzXUjCAF",
+          "ICOsGEVHyVCsTVTdJUE51lVIhuUzxw48d3DR7MlrLELYLz4l+e8O4Aeevgbx244C",
+          "NRRSnSsvIQMCAP08ZcIMjmZB863RL5Af6sdypOuums7t37+ZkkdGRUKk4brc/5JA",
+          "7KtGWPR4BpS4AzP/+Q/f77s=",
+          "-----END PRIVATE KEY-----"
+        ].join('\n');
 
         const auth = new google.auth.JWT(
           process.env.GOOGLE_CLIENT_EMAIL,
