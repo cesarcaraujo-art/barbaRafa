@@ -310,13 +310,19 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
     const dataFormatada = data ? data.split('-').reverse().join('/') : data;
     const precoFormatado = parseFloat(preco || 0).toFixed(2).replace('.', ',');
 
-    // 1. ADICIONAR AUTOMATICAMENTE NA GOOGLE AGENDA (SE AS CREDENCIAIS ESTIVEREM CONFIGURADAS)
+    // 1. ADICIONAR AUTOMATICAMENTE NA GOOGLE AGENDA COM CORREÇÃO DA CHAVE PRIVADA
     if (process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
       try {
+        let privateKey = process.env.GOOGLE_PRIVATE_KEY;
+        if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+          privateKey = privateKey.slice(1, -1);
+        }
+        privateKey = privateKey.replace(/\\n/g, '\n');
+
         const auth = new google.auth.JWT(
           process.env.GOOGLE_CLIENT_EMAIL,
           null,
-          process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+          privateKey,
           ['https://www.googleapis.com/auth/calendar']
         );
 
