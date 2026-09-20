@@ -11,28 +11,21 @@ app.use(cors());
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ limit: '20mb', extended: true }));
 
-// Servir arquivos estáticos (HTML, CSS, JS do front-end que estão na raiz)
 app.use(express.static(path.join(__dirname)));
 
-// Rota raiz para carregar o index.html principal
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_123456');
 
-// CONEXÃO MONGO
 const MONGO_URI = process.env.MONGO_URI;
-
-if (!MONGO_URI) {
-  console.warn('⚠️ MONGO_URI não definida!');
-} else {
+if (MONGO_URI) {
   mongoose.connect(MONGO_URI)
     .then(() => console.log('🍃 Conectado ao MongoDB Atlas com sucesso!'))
     .catch((err) => console.error('❌ Erro ao conectar ao MongoDB Atlas:', err));
 }
 
-// SCHEMAS
 const barbeiroSchema = new mongoose.Schema({
   nome: { type: String, required: true },
   email: { type: String, required: true, unique: true },
@@ -72,18 +65,12 @@ const Barbeiro = mongoose.model('Barbeiro', barbeiroSchema);
 const Agendamento = mongoose.model('Agendamento', agendamentoSchema);
 const ConfigSite = mongoose.model('ConfigSite', configSiteSchema);
 
-// PING
-app.get('/api/ping', (req, res) => {
-  return res.status(200).json({ status: 'OK' });
-});
+app.get('/api/ping', (req, res) => res.status(200).json({ status: 'OK' }));
 
-// CONFIGURAÇÕES DO SITE
 app.get('/api/config-site', async (req, res) => {
   try {
     let config = await ConfigSite.findOne({ key: 'geral' });
-    if (!config) {
-      config = await ConfigSite.create({ key: 'geral' });
-    }
+    if (!config) config = await ConfigSite.create({ key: 'geral' });
     return res.status(200).json(config);
   } catch (err) {
     return res.status(500).json({ erro: 'Erro ao buscar configurações.' });
@@ -100,21 +87,15 @@ app.put('/api/config-site', async (req, res) => {
     );
     return res.status(200).json({ sucesso: true, config });
   } catch (err) {
-    console.error('Erro ao salvar config site:', err);
-    return res.status(500).json({ sucesso: false, erro: 'Erro ao salvar no banco de dados.' });
+    return res.status(500).json({ sucesso: false, erro: 'Erro ao salvar no banco.' });
   }
 });
 
-// LISTAR BARBEIROS
 app.get('/api/barbeiros', async (req, res) => {
   try {
     const barbeiros = await Barbeiro.find({ email: { $ne: 'admin' } }, 'nome foto email primeiroAcesso');
     return res.status(200).json(barbeiros.map(b => ({
-      id: b._id,
-      nome: b.nome,
-      email: b.email,
-      foto: b.foto,
-      primeiroAcesso: b.primeiroAcesso
+      id: b._id, nome: b.nome, email: b.email, foto: b.foto, primeiroAcesso: b.primeiroAcesso
     })));
   } catch (err) {
     return res.status(500).json({ erro: 'Erro ao buscar barbeiros.' });
@@ -125,16 +106,11 @@ app.post('/api/barbeiros', async (req, res) => {
   try {
     const { nome, foto } = req.body || {};
     if (!nome) return res.status(400).json({ sucesso: false, erro: 'Informe o nome.' });
-
     const emailGerado = nome.toLowerCase().trim().replace(/\s+/g, '');
     const novoBarbeiro = await Barbeiro.create({
-      nome: nome.trim(),
-      email: emailGerado,
-      senha: '1234',
-      foto: foto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      primeiroAcesso: true
+      nome: nome.trim(), email: emailGerado, senha: '1234',
+      foto: foto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', primeiroAcesso: true
     });
-
     return res.status(200).json({ sucesso: true, barbeiro: { id: novoBarbeiro._id, nome: novoBarbeiro.nome, foto: novoBarbeiro.foto } });
   } catch (err) {
     return res.status(500).json({ sucesso: false, erro: 'Erro ao salvar barbeiro.' });
@@ -148,7 +124,6 @@ app.put('/api/barbeiros/:id', async (req, res) => {
     const atualizacao = {};
     if (nome) atualizacao.nome = nome.trim();
     if (foto) atualizacao.foto = foto;
-
     const barbeiroAtualizado = await Barbeiro.findByIdAndUpdate(id, atualizacao, { new: true });
     return res.status(200).json({ sucesso: true, barbeiro: barbeiroAtualizado });
   } catch (err) {
@@ -165,16 +140,12 @@ app.delete('/api/barbeiros/:id', async (req, res) => {
   }
 });
 
-// LOGIN
 app.post('/api/barbeiro/login', async (req, res) => {
   try {
     const body = req.body || {};
-    const entrada = (body.email || body.usuario || body.login || body.loginUser || body.user || '').toString().trim().toLowerCase();
-    const senhaInput = (body.senha || body.loginPass || body.pass || '').toString().trim();
-
-    if (!entrada || !senhaInput) {
-      return res.status(400).json({ sucesso: false, erro: 'Preencha usuário e senha.' });
-    }
+    const entrada = (body.email || body.usuario || body.login || '').toString().trim().toLowerCase();
+    const senhaInput = (body.senha || body.pass || '').toString().trim();
+    if (!entrada || !senhaInput) return res.status(400).json({ sucesso: false, erro: 'Preencha usuário e senha.' });
 
     let barbeiro = await Barbeiro.findOne({
       $or: [{ email: entrada }, { nome: new RegExp(`^${entrada}$`, 'i') }],
@@ -183,14 +154,10 @@ app.post('/api/barbeiro/login', async (req, res) => {
 
     if (!barbeiro && (entrada === 'admin' || entrada === 'administrador')) {
       let adminExistente = await Barbeiro.findOne({ email: 'admin' });
-
       if (!adminExistente) {
         adminExistente = await Barbeiro.create({
-          nome: 'Administrador',
-          email: 'admin',
-          senha: senhaInput,
-          foto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-          primeiroAcesso: false
+          nome: 'Administrador', email: 'admin', senha: senhaInput,
+          foto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', primeiroAcesso: false
         });
         barbeiro = adminExistente;
       } else if (adminExistente.senha === senhaInput) {
@@ -198,77 +165,47 @@ app.post('/api/barbeiro/login', async (req, res) => {
       }
     }
 
-    if (!barbeiro) {
-      return res.status(401).json({ sucesso: false, erro: 'Usuário ou senha incorretos.' });
-    }
+    if (!barbeiro) return res.status(401).json({ sucesso: false, erro: 'Usuário ou senha incorretos.' });
 
     return res.status(200).json({
       sucesso: true,
-      barbeiro: {
-        id: barbeiro._id,
-        nome: barbeiro.nome,
-        email: barbeiro.email,
-        primeiroAcesso: barbeiro.primeiroAcesso
-      }
+      barbeiro: { id: barbeiro._id, nome: barbeiro.nome, email: barbeiro.email, primeiroAcesso: barbeiro.primeiroAcesso }
     });
   } catch (err) {
-    console.error('Erro no login:', err);
     return res.status(500).json({ sucesso: false, erro: 'Erro interno no login.' });
   }
 });
 
-// ALTERAÇÃO DE SENHA
 app.post('/api/barbeiro/alterar-senha', async (req, res) => {
   try {
     const { idBarbeiro, novaSenha } = req.body || {};
-    if (!novaSenha || novaSenha.length < 4) {
-      return res.status(400).json({ sucesso: false, erro: 'A senha deve ter no mínimo 4 caracteres.' });
-    }
-
+    if (!novaSenha || novaSenha.length < 4) return res.status(400).json({ sucesso: false, erro: 'Senha curta.' });
     let barbeiro = null;
-    if (idBarbeiro && mongoose.Types.ObjectId.isValid(idBarbeiro)) {
-      barbeiro = await Barbeiro.findById(idBarbeiro);
-    }
+    if (idBarbeiro && mongoose.Types.ObjectId.isValid(idBarbeiro)) barbeiro = await Barbeiro.findById(idBarbeiro);
+    if (!barbeiro) barbeiro = await Barbeiro.findOne({ email: 'admin' });
 
     if (!barbeiro) {
-      barbeiro = await Barbeiro.findOne({ email: 'admin' });
-    }
-
-    if (!barbeiro) {
-      barbeiro = await Barbeiro.create({
-        nome: 'Administrador',
-        email: 'admin',
-        senha: String(novaSenha).trim(),
-        foto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-        primeiroAcesso: false
+      await Barbeiro.create({
+        nome: 'Administrador', email: 'admin', senha: String(novaSenha).trim(),
+        foto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', primeiroAcesso: false
       });
     } else {
       barbeiro.senha = String(novaSenha).trim();
       barbeiro.primeiroAcesso = false;
       await barbeiro.save();
     }
-
-    return res.status(200).json({ sucesso: true, mensagem: 'Senha alterada com sucesso!' });
+    return res.status(200).json({ sucesso: true, mensagem: 'Senha alterada!' });
   } catch (err) {
-    console.error('Erro ao alterar senha:', err);
     return res.status(500).json({ sucesso: false, erro: 'Erro ao alterar senha.' });
   }
 });
 
-// AGENDAMENTOS
 app.get('/api/agendamentos', async (req, res) => {
   try {
     const agendamentos = await Agendamento.find().sort({ createdAt: -1 });
     return res.status(200).json(agendamentos.map(a => ({
-      id: a._id,
-      cliente: a.cliente,
-      email: a.email,
-      whats: a.whats,
-      barbeiro: a.barbeiro,
-      servico: a.servico,
-      preco: a.preco,
-      data: a.data,
-      hora: a.hora
+      id: a._id, cliente: a.cliente, email: a.email, whats: a.whats,
+      barbeiro: a.barbeiro, servico: a.servico, preco: a.preco, data: a.data, hora: a.hora
     })));
   } catch (err) {
     return res.status(500).json({ erro: 'Erro ao buscar agendamentos.' });
@@ -278,9 +215,9 @@ app.get('/api/agendamentos', async (req, res) => {
 app.delete('/api/agendamentos/:id', async (req, res) => {
   try {
     await Agendamento.findByIdAndDelete(req.params.id);
-    return res.status(200).json({ sucesso: true, mensagem: 'Agendamento removido.' });
+    return res.status(200).json({ sucesso: true, mensagem: 'Removido.' });
   } catch (err) {
-    return res.status(500).json({ sucesso: false, erro: 'Erro ao remover agendamento.' });
+    return res.status(500).json({ sucesso: false, erro: 'Erro ao remover.' });
   }
 });
 
@@ -291,30 +228,23 @@ app.get('/api/horarios-ocupados', async (req, res) => {
   return res.status(200).json(agendamentos.map(a => a.hora));
 });
 
-// ROTA DE AGENDAMENTO COM INSERÇÃO AUTOMÁTICA NA GOOGLE AGENDA VIA API
+// ROTA DE AGENDAMENTO COM SUPORTE A CHAVE EM BASE64
 app.post('/api/enviar-email-confirmacao', async (req, res) => {
   const { nome, email, barbeiro, servico, preco, data, hora, whats } = req.body || {};
 
   try {
     const novoAgendamento = await Agendamento.create({
-      cliente: nome,
-      email,
-      whats,
-      barbeiro,
-      servico,
-      preco: parseFloat(preco || 0),
-      data,
-      hora
+      cliente: nome, email, whats, barbeiro, servico,
+      preco: parseFloat(preco || 0), data, hora
     });
 
     const dataFormatada = data ? data.split('-').reverse().join('/') : data;
     const precoFormatado = parseFloat(preco || 0).toFixed(2).replace('.', ',');
 
-    // 1. ADICIONAR AUTOMATICAMENTE NA GOOGLE AGENDA COM LIMPEZA ROBUSTA DA CHAVE
+    // 1. ADICIONAR AUTOMATICAMENTE NA GOOGLE AGENDA VIA BASE64
     if (process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
       try {
-        let privateKey = process.env.GOOGLE_PRIVATE_KEY || '';
-        privateKey = privateKey.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n');
+        const privateKey = Buffer.from(process.env.GOOGLE_PRIVATE_KEY.trim(), 'base64').toString('utf8');
 
         const auth = new google.auth.JWT(
           process.env.GOOGLE_CLIENT_EMAIL,
@@ -325,7 +255,6 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
 
         const calendar = google.calendar({ version: 'v3', auth });
 
-        // Montar horários de início e fim (duração de 1 hora)
         const [ano, mes, dia] = data.split('-');
         const [horaStr, minStr] = hora.split(':');
         const dataInicioIso = `${ano}-${mes}-${dia}T${horaStr}:${minStr}:00-03:00`;
