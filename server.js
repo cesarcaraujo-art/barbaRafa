@@ -340,5 +340,89 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
   }
 });
 
+app.post('/api/enviar-email-confirmacao', async (req, res) => {
+  const { nome, email, barbeiro, servico, preco, data, hora, whats } = req.body || {};
+
+  try {
+    const novoAgendamento = await Agendamento.create({
+      cliente: nome,
+      email,
+      whats,
+      barbeiro,
+      servico,
+      preco: parseFloat(preco || 0),
+      data,
+      hora
+    });
+
+    const dataFormatada = data ? data.split('-').reverse().join('/') : data;
+    const precoFormatado = parseFloat(preco || 0).toFixed(2).replace('.', ',');
+
+    if (email) {
+      // Criação das datas no formato exigido pelo iCalendar (YYYYMMDDTHHmmssZ)
+      const [ano, mes, dia] = data.split('-');
+      const [horaStr, minStr] = hora.split(':');
+      
+      const dataInicioStr = `${ano}${mes}${dia}T${horaStr}${minStr}00`;
+      
+      const horaFimNum = parseInt(horaStr) + 1;
+      const horaFimStr = (horaFimNum < 10 ? '0' : '') + horaFimNum + minStr + '00';
+      const dataFimStr = `${ano}${mes}${dia}T${horaFimStr}`;
+
+      // Conteúdo do arquivo .ics para cair direto na agenda
+      const conteudoIcs = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Barbearia Rafael//Agendamento Online//PT',
+        'BEGIN:VEVENT',
+        `UID:agendamento-${Date.now()}@barbariarafael.com`,
+        `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
+        `DTSTART:${dataInicioStr}`,
+        `DTEND:${dataFimStr}`,
+        `SUMMARY:Corte / Serviço com ${barbeiro} - Barbearia Rafael`,
+        `DESCRIPTION:Serviço: ${servico}\\nProfissional: ${barbeiro}\\nValor: R$ ${precoFormatado}`,
+        `LOCATION:Rua Santo Antônio, 622 - Vila Caiçara - Praia Grande/SP`,
+        'END:VEVENT',
+        'END:VCALENDAR'
+      ].join('\r\n');
+
+      await resend.emails.send({
+        from: 'Barbearia Rafael <onboarding@resend.dev>',
+        to: [email],
+        subject: '✂️ Confirmação de Agendamento - Barbearia Rafael',
+        html: `
+          <div style="font-family: Arial, sans-serif; background-color: #121212; color: #ffffff; padding: 20px; border-radius: 8px;">
+            <h2 style="color: #e0a96d; text-align: center;">Olá, ${nome}!</h2>
+            <p style="font-size: 1rem; text-align: center;">Seu agendamento foi realizado com sucesso. <b>O convite para adicionar à sua agenda está anexado a este e-mail!</b></p>
+            
+            <div style="background-color: #1e1e1e; padding: 15px; border-radius: 6px; border-left: 4px solid #e0a96d; margin: 20px 0;">
+              <p style="margin: 5px 0;">💈 <b>Profissional:</b> ${barbeiro}</p>
+              <p style="margin: 5px 0;">✂️ <b>Serviço:</b> ${servico} (R$ ${precoFormatado})</p>
+              <p style="margin: 5px 0;">📅 <b>Data:</b> ${dataFormatada}</p>
+              <p style="margin: 5px 0;">⏰ <b>Horário:</b> ${hora} hs</p>
+            </div>
+
+            <p style="text-align: center; color: #aaa; font-size: 0.9rem;">
+              Te esperamos no horário agendado!
+            </p>
+          </div>
+        `,
+        attachments: [
+          {
+            filename: 'convite-barbearia.ics',
+            content: Buffer.from(conteudoIcs).toString('base64'),
+            contentType: 'text/calendar'
+          }
+        ]
+      });
+    }
+
+    return res.status(200).json({ sucesso: true, agendamento: novoAgendamento });
+  } catch (err) {
+    console.error('❌ Erro no agendamento/e-mail:', err);
+    return res.status(200).json({ sucesso: true });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Servidor na porta ${PORT}`));
