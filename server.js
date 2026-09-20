@@ -241,14 +241,27 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
     const dataFormatada = data ? data.split('-').reverse().join('/') : data;
     const precoFormatado = parseFloat(preco || 0).toFixed(2).replace('.', ',');
 
-    // 1. ADICIONAR AUTOMATICAMENTE NA GOOGLE AGENDA VIA BASE64
+    // 1. ADICIONAR AUTOMATICAMENTE NA GOOGLE AGENDA (LEITURA DIRETA SEGURA)
     if (process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
       try {
-        let privateKey = Buffer.from(process.env.GOOGLE_PRIVATE_KEY.trim(), 'base64').toString('utf8');
-        // Caso a chave decodificada ainda precise de ajuste de quebras de linha
-        if (!privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
-          privateKey = process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n');
+        let rawKey = process.env.GOOGLE_PRIVATE_KEY.trim();
+        // Remove aspas caso tenham sido adicionadas por engano no Render
+        if (rawKey.startsWith('"') && rawKey.endsWith('"')) {
+          rawKey = rawKey.slice(1, -1);
         }
+        
+        // Se a chave ainda estiver em Base64, decodifica para texto normal
+        let privateKey = rawKey;
+        if (!rawKey.includes('-----BEGIN PRIVATE KEY-----')) {
+          try {
+            privateKey = Buffer.from(rawKey, 'base64').toString('utf8');
+          } catch (e) {
+            privateKey = rawKey;
+          }
+        }
+        
+        // Normaliza as quebras de linha reais
+        privateKey = privateKey.replace(/\\n/g, '\n');
 
         const auth = new google.auth.JWT(
           process.env.GOOGLE_CLIENT_EMAIL,
