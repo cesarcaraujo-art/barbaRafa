@@ -241,10 +241,10 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
     const dataFormatada = data ? data.split('-').reverse().join('/') : data;
     const precoFormatado = parseFloat(preco || 0).toFixed(2).replace('.', ',');
 
-    // 1. ADICIONAR AUTOMATICAMENTE NA GOOGLE AGENDA VIA BASE64
+    // 1. ADICIONAR AUTOMATICAMENTE NA GOOGLE AGENDA
     if (process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
       try {
-        const privateKey = Buffer.from(process.env.GOOGLE_PRIVATE_KEY.trim(), 'base64').toString('utf8');
+        let privateKey = process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n');
 
         const auth = new google.auth.JWT(
           process.env.GOOGLE_CLIENT_EMAIL,
