@@ -290,56 +290,7 @@ app.get('/api/horarios-ocupados', async (req, res) => {
   return res.status(200).json(agendamentos.map(a => a.hora));
 });
 
-app.post('/api/enviar-email-confirmacao', async (req, res) => {
-  const { nome, email, barbeiro, servico, preco, data, hora, whats } = req.body || {};
-
-  try {
-    const novoAgendamento = await Agendamento.create({
-      cliente: nome,
-      email,
-      whats,
-      barbeiro,
-      servico,
-      preco: parseFloat(preco || 0),
-      data,
-      hora
-    });
-
-    const dataFormatada = data ? data.split('-').reverse().join('/') : data;
-    const precoFormatado = parseFloat(preco || 0).toFixed(2).replace('.', ',');
-
-    if (email) {
-      await resend.emails.send({
-        from: 'Barbearia Rafael <onboarding@resend.dev>',
-        to: [email],
-        subject: '✂️ Confirmação de Agendamento - Barbearia Rafael',
-        html: `
-          <div style="font-family: Arial, sans-serif; background-color: #121212; color: #ffffff; padding: 20px; border-radius: 8px;">
-            <h2 style="color: #e0a96d; text-align: center;">Olá, ${nome}!</h2>
-            <p style="font-size: 1rem; text-align: center;">Seu agendamento foi realizado com sucesso. Confira os detalhes abaixo:</p>
-            
-            <div style="background-color: #1e1e1e; padding: 15px; border-radius: 6px; border-left: 4px solid #e0a96d; margin: 20px 0;">
-              <p style="margin: 5px 0;">💈 <b>Profissional:</b> ${barbeiro}</p>
-              <p style="margin: 5px 0;">✂️ <b>Serviço:</b> ${servico} (R$ ${precoFormatado})</p>
-              <p style="margin: 5px 0;">📅 <b>Data:</b> ${dataFormatada}</p>
-              <p style="margin: 5px 0;">⏰ <b>Horário:</b> ${hora} hs</p>
-            </div>
-
-            <p style="text-align: center; color: #aaa; font-size: 0.9rem;">
-              Te esperamos no horário agendado!
-            </p>
-          </div>
-        `
-      });
-    }
-
-    return res.status(200).json({ sucesso: true, agendamento: novoAgendamento });
-  } catch (err) {
-    console.error('❌ Erro no agendamento/e-mail:', err);
-    return res.status(200).json({ sucesso: true });
-  }
-});
-
+// ROTA DE ENVIO DE E-MAIL E CONVITE .ICS (CLIENTE + ADMIN)
 app.post('/api/enviar-email-confirmacao', async (req, res) => {
   const { nome, email, barbeiro, servico, preco, data, hora, whats } = req.body || {};
 
@@ -386,9 +337,12 @@ app.post('/api/enviar-email-confirmacao', async (req, res) => {
         'END:VCALENDAR'
       ].join('\r\n');
 
+      // Envia para o cliente E para o seu e-mail administrativo
+      const destinatarios = [email, 'barbarafa100@gmail.com'];
+
       await resend.emails.send({
         from: 'Barbearia Rafael <onboarding@resend.dev>',
-        to: [email],
+        to: destinatarios,
         subject: '✂️ Confirmação de Agendamento - Barbearia Rafael',
         html: `
           <div style="font-family: Arial, sans-serif; background-color: #121212; color: #ffffff; padding: 20px; border-radius: 8px;">
